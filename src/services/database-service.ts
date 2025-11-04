@@ -1,5 +1,5 @@
 import { hybridStorage, PendingTour } from '@/utils/hybridStorage';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { SyncEvents } from './sync-events';
 import type { Tour, FloorPlan, Hotspot } from '@/types/tour';
 

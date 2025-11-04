@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { offlineStorage, PendingPhoto } from '@/utils/offlineStorage';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { createImageVersions } from '@/utils/imageOptimization';
 import { toast } from 'sonner';
 
