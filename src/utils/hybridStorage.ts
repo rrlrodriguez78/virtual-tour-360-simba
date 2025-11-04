@@ -430,6 +430,79 @@ class HybridStorageManager {
     }
   }
 
+  // Clean old pending tours (older than 7 days)
+  cleanOldPendingTours(): number {
+    try {
+      const pending = this.getPendingTours();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const validTours = pending.filter(tour => {
+        const createdAt = new Date(tour.createdAt);
+        return createdAt > sevenDaysAgo;
+      });
+      
+      const removedCount = pending.length - validTours.length;
+      
+      if (removedCount > 0) {
+        localStorage.setItem(this.PENDING_TOURS_KEY, JSON.stringify(validTours));
+        console.log(`🧹 Limpiados ${removedCount} tours pendientes antiguos (>7 días)`);
+      }
+      
+      return removedCount;
+    } catch (error) {
+      console.error('Error cleaning old pending tours:', error);
+      return 0;
+    }
+  }
+
+  // Clean all old localStorage data related to tours
+  cleanAllOldData(): { toursRemoved: number; keysRemoved: number } {
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      // Clean pending tours
+      const toursRemoved = this.cleanOldPendingTours();
+      
+      // Clean tour metadata that's older than 7 days
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('tour_metadata_')) {
+          try {
+            const metadata = JSON.parse(localStorage.getItem(key) || '{}');
+            if (metadata.lastSyncedAt) {
+              const lastSync = new Date(metadata.lastSyncedAt);
+              if (lastSync < sevenDaysAgo) {
+                keysToRemove.push(key);
+              }
+            } else if (metadata.cachedAt) {
+              const cachedAt = new Date(metadata.cachedAt);
+              if (cachedAt < sevenDaysAgo) {
+                keysToRemove.push(key);
+              }
+            }
+          } catch (e) {
+            // Invalid metadata, remove it
+            keysToRemove.push(key);
+          }
+        }
+      }
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      if (toursRemoved > 0 || keysToRemove.length > 0) {
+        console.log(`🧹 Auto-limpieza completada: ${toursRemoved} tours, ${keysToRemove.length} metadatos`);
+      }
+      
+      return { toursRemoved, keysRemoved: keysToRemove.length };
+    } catch (error) {
+      console.error('Error during auto-cleanup:', error);
+      return { toursRemoved: 0, keysRemoved: 0 };
+    }
+  }
+
   // Mark tour as synced and update its ID
   async markTourSynced(localId: string, remoteId?: string): Promise<void> {
     const pending = this.getPendingTours();

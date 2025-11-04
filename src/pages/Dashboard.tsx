@@ -74,6 +74,14 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (user && currentTenant) {
+      // Auto-limpieza de datos antiguos (>7 días) al cargar
+      const cleanupResult = hybridStorage.cleanAllOldData();
+      if (cleanupResult.toursRemoved > 0 || cleanupResult.keysRemoved > 0) {
+        toast.info('Se limpiaron datos antiguos automáticamente', {
+          description: `${cleanupResult.toursRemoved} tours pendientes y ${cleanupResult.keysRemoved} metadatos obsoletos`
+        });
+      }
+      
       loadData();
     }
   }, [user, currentTenant]);
