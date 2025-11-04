@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { NavigationPoint } from '@/types/tour';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

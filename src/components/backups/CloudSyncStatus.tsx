@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { RefreshCw, CheckCircle, XCircle, Cloud } from 'lucide-react';
 
 interface Props {

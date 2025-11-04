@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Users, MapPin, Eye, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';

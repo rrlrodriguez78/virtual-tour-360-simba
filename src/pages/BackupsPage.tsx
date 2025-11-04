@@ -10,7 +10,7 @@ import BackupSettings from '@/components/backups/BackupSettings';
 import { BackupSyncHistory } from '@/components/backups/BackupSyncHistory';
 import { TourBackupConfig } from '@/components/backups/TourBackupConfig';
 import { BatchPhotoSync } from '@/components/backups/BatchPhotoSync';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { toast } from 'sonner';
 
 const BackupsPage: React.FC = () => {

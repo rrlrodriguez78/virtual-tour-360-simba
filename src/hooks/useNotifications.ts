@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Audio notification management using HTMLAudioElement

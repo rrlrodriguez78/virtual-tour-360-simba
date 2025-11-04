@@ -6,7 +6,7 @@ import * as LucideIcons from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Hotspot } from '@/types/tour';
 import { useUnifiedPointer } from '@/hooks/useUnifiedPointer';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { PlacementLoadingOverlay } from './PlacementLoadingOverlay';
 
 const extractFilename = (url: string): string => {

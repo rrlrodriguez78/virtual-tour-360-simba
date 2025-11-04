@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTranslation } from 'react-i18next';
 import { Clock, Plus, Eye, MessageSquare, Heart, Mail } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { useTenant } from '@/contexts/TenantContext';
 import { motion } from 'framer-motion';
 

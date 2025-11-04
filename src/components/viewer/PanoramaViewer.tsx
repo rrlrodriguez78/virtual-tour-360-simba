@@ -30,7 +30,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { NavigationArrow3D } from './NavigationArrow3D';
 import { ImageNotFoundFallback } from './ImageNotFoundFallback';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { animateValue, delay, easeInOutCubic } from '@/utils/cameraAnimation';
 import { DateSelector } from './DateSelector';
 

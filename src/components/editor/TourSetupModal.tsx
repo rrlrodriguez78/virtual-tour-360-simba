@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ImageEditor from "./ImageEditor";
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { useTranslation } from 'react-i18next';
 import { optimizeImage, validateImageFile, formatFileSize } from '@/utils/imageOptimization';
 

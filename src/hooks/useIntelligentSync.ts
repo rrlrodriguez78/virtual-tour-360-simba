@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { hybridStorage } from '@/utils/hybridStorage';
 import { offlineStorage } from '@/utils/offlineStorage';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { toast } from 'sonner';
 import { useThetaWiFiDetector } from './useThetaWiFiDetector';
 import { useUserSettingsContext } from '@/contexts/UserSettingsContext';

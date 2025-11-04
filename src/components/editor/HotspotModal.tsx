@@ -12,7 +12,7 @@ import PanoramaManager from './PanoramaManager';
 import { NavigationPointsEditor } from './NavigationPointsEditor';
 import { useTranslation } from 'react-i18next';
 import { Hotspot } from '@/types/tour';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 
 export type HotspotData = Omit<Hotspot, 'floor_plan_id' | 'created_at' | 'id'> & { id?: string };
 

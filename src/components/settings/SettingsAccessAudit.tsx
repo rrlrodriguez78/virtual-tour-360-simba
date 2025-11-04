@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, Clock, MapPin, Monitor } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

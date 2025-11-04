@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { hybridStorage } from '@/utils/hybridStorage';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 import { toast } from 'sonner';
 
 export function useOfflineEditing() {

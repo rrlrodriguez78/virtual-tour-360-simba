@@ -1,5 +1,5 @@
 import { Tour, FloorPlan, Hotspot } from '@/types/tour';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/custom-client';
 
 interface CachedTour {
   tour: Tour;
