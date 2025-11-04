@@ -17,7 +17,8 @@ import {
   AlertCircle,
   CheckCircle2,
   FolderOpen,
-  Settings
+  Settings,
+  XCircle
 } from 'lucide-react';
 import { useHybridStorage } from '@/hooks/useHybridStorage';
 import { toast } from 'sonner';
@@ -97,6 +98,33 @@ export default function OfflineCacheManager() {
     }
   };
 
+  const handleClearAllData = () => {
+    try {
+      // Limpiar tours pendientes
+      localStorage.removeItem('pending_tours');
+      
+      // Limpiar otros datos de tours
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('tour_') || key.startsWith('offline_'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      toast.success('Todos los datos locales han sido limpiados');
+      
+      // Recargar la página
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      toast.error('Error al limpiar datos');
+    }
+  };
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -145,6 +173,14 @@ export default function OfflineCacheManager() {
           </div>
           
           <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              onClick={handleClearAllData}
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Limpiar Todo
+            </Button>
+            
             {usingNativeStorage && (
               <Button
                 variant="outline"
