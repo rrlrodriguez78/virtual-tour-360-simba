@@ -156,3 +156,32 @@ export function getStorageDirectory(): Directory {
 export function getBasePath(): string {
   return 'VirtualTour360';
 }
+
+/**
+ * 🆕 Solicita permisos desde la UI con feedback visual
+ * Útil para Android donde los permisos pueden no solicitarse automáticamente
+ */
+export async function requestPermissionsFromUI(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) {
+    console.log('ℹ️ No es plataforma nativa, permisos no necesarios');
+    return true;
+  }
+  
+  console.log('📱 Solicitando permisos desde UI...');
+  
+  try {
+    const granted = await requestStoragePermission();
+    
+    if (!granted) {
+      console.warn('⚠️ Permisos denegados - abriendo configuración');
+      await openAppSettings();
+      return false;
+    }
+    
+    console.log('✅ Permisos concedidos desde UI');
+    return true;
+  } catch (error) {
+    console.error('❌ Error solicitando permisos desde UI:', error);
+    return false;
+  }
+}

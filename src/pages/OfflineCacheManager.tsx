@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Capacitor } from '@capacitor/core';
+import { PermissionsRequestButton } from '@/components/shared/PermissionsRequestButton';
 
 export default function OfflineCacheManager() {
   const navigate = useNavigate();
@@ -160,12 +161,9 @@ export default function OfflineCacheManager() {
         {isNativeApp && !hasPermission && (
           <Alert className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>Se requieren permisos de almacenamiento para usar el modo offline completo</span>
-              <Button onClick={requestPermissions} size="sm" className="ml-4">
-                <Settings className="w-4 h-4 mr-2" />
-                Conceder Permisos
-              </Button>
+            <AlertDescription className="flex flex-col gap-3">
+              <p>Se requieren permisos de almacenamiento para usar el modo offline completo</p>
+              <PermissionsRequestButton />
             </AlertDescription>
           </Alert>
         )}
