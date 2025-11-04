@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .from('profiles')
           .select('account_status')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
           console.error('Error checking account status:', profileError);
