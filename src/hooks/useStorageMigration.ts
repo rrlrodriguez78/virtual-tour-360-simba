@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client'; // Lovable Cloud
-import { customSupabase } from '@/integrations/supabase/custom-client'; // Tu Supabase personal
+import { customSupabase } from '@/integrations/supabase/custom-client';
 import { toast } from 'sonner';
 
 interface FileToMigrate {
+  url: string;
   bucket: string;
   path: string;
-  name: string;
+  type: 'panorama' | 'floor_plan' | 'cover';
+  recordId: string;
 }
 
 interface MigrationResult {
@@ -32,8 +33,6 @@ export function useStorageMigration() {
   const [errors, setErrors] = useState<string[]>([]);
   const [filesToMigrate, setFilesToMigrate] = useState<FileToMigrate[]>([]);
 
-  const BUCKETS_TO_SCAN = ['tour-images', 'panoramas', 'floor-plans', 'cover-images'];
-
   const reset = () => {
     setIsScanning(false);
     setIsMigrating(false);
@@ -48,48 +47,97 @@ export function useStorageMigration() {
     setFilesToMigrate([]);
   };
 
+  const extractBucketAndPath = (url: string): { bucket: string; path: string } | null => {
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/storage/v1/object/public/');
+      if (pathParts.length < 2) return null;
+      
+      const [bucket, ...pathSegments] = pathParts[1].split('/');
+      return {
+        bucket,
+        path: pathSegments.join('/')
+      };
+    } catch {
+      return null;
+    }
+  };
+
   const startScan = async () => {
     setIsScanning(true);
     setErrors([]);
     const allFiles: FileToMigrate[] = [];
 
     try {
-      for (let i = 0; i < BUCKETS_TO_SCAN.length; i++) {
-        const bucket = BUCKETS_TO_SCAN[i];
-        setScanProgress(Math.round(((i + 1) / BUCKETS_TO_SCAN.length) * 100));
+      // 1. Escanear panorama_photos
+      setScanProgress(10);
+      const { data: panoramas, error: panoramasError } = await customSupabase
+        .from('panorama_photos')
+        .select('id, photo_url')
+        .not('photo_url', 'is', null);
 
-        try {
-          // Listar archivos en Lovable Cloud
-          const { data, error } = await supabase.storage.from(bucket).list('', {
-            limit: 1000,
-            offset: 0,
-          });
-
-          if (error) {
-            console.error(`Error al listar bucket ${bucket}:`, error);
-            setErrors(prev => [...prev, `Error en bucket ${bucket}: ${error.message}`]);
-            continue;
+      if (!panoramasError && panoramas) {
+        panoramas.forEach(p => {
+          const parsed = extractBucketAndPath(p.photo_url);
+          if (parsed) {
+            allFiles.push({
+              url: p.photo_url,
+              bucket: parsed.bucket,
+              path: parsed.path,
+              type: 'panorama',
+              recordId: p.id
+            });
           }
+        });
+      }
 
-          if (data && data.length > 0) {
-            const filesInBucket = data
-              .filter(file => file.name !== '.emptyFolderPlaceholder')
-              .map(file => ({
-                bucket,
-                path: file.name,
-                name: file.name,
-              }));
-            
-            allFiles.push(...filesInBucket);
+      // 2. Escanear floor_plans
+      setScanProgress(40);
+      const { data: floorPlans, error: floorPlansError } = await customSupabase
+        .from('floor_plans')
+        .select('id, image_url')
+        .not('image_url', 'is', null);
+
+      if (!floorPlansError && floorPlans) {
+        floorPlans.forEach(fp => {
+          const parsed = extractBucketAndPath(fp.image_url);
+          if (parsed) {
+            allFiles.push({
+              url: fp.image_url,
+              bucket: parsed.bucket,
+              path: parsed.path,
+              type: 'floor_plan',
+              recordId: fp.id
+            });
           }
-        } catch (bucketError: any) {
-          console.error(`Error al procesar bucket ${bucket}:`, bucketError);
-          setErrors(prev => [...prev, `Error al procesar ${bucket}: ${bucketError.message}`]);
-        }
+        });
+      }
+
+      // 3. Escanear virtual_tours cover images
+      setScanProgress(70);
+      const { data: tours, error: toursError } = await customSupabase
+        .from('virtual_tours')
+        .select('id, cover_image_url')
+        .not('cover_image_url', 'is', null);
+
+      if (!toursError && tours) {
+        tours.forEach(t => {
+          const parsed = extractBucketAndPath(t.cover_image_url);
+          if (parsed) {
+            allFiles.push({
+              url: t.cover_image_url,
+              bucket: parsed.bucket,
+              path: parsed.path,
+              type: 'cover',
+              recordId: t.id
+            });
+          }
+        });
       }
 
       setFilesToMigrate(allFiles);
       setFilesFound(allFiles.length);
+      setScanProgress(100);
       
       toast.success(`✅ Escaneo completado: ${allFiles.length} archivos encontrados`);
     } catch (error: any) {
@@ -98,27 +146,25 @@ export function useStorageMigration() {
       setErrors(prev => [...prev, `Error general: ${error.message}`]);
     } finally {
       setIsScanning(false);
-      setScanProgress(100);
     }
   };
 
   const migrateFile = async (file: FileToMigrate): Promise<MigrationResult> => {
     try {
-      // 1. Descargar archivo de Lovable Cloud
-      const { data: downloadData, error: downloadError } = await supabase.storage
-        .from(file.bucket)
-        .download(file.path);
-
-      if (downloadError) {
-        throw new Error(`Error al descargar: ${downloadError.message}`);
+      // 1. Descargar archivo desde URL pública
+      const response = await fetch(file.url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
+      const blob = await response.blob();
+
       // 2. Subir a tu Supabase personal
-      const { data: uploadData, error: uploadError } = await customSupabase.storage
+      const { error: uploadError } = await customSupabase.storage
         .from(file.bucket)
-        .upload(file.path, downloadData, {
+        .upload(file.path, blob, {
           upsert: true,
-          contentType: downloadData.type,
+          contentType: blob.type || 'image/jpeg',
         });
 
       if (uploadError) {
@@ -132,12 +178,13 @@ export function useStorageMigration() {
 
       const newUrl = publicUrlData.publicUrl;
 
-      // 4. Actualizar URLs en la base de datos según el bucket
+      // 4. Actualizar URLs en la base de datos
       await updateDatabaseUrls(file, newUrl);
 
       return {
         success: true,
         file,
+        oldUrl: file.url,
         newUrl,
       };
     } catch (error: any) {
@@ -151,9 +198,7 @@ export function useStorageMigration() {
 
   const updateDatabaseUrls = async (file: FileToMigrate, newUrl: string) => {
     try {
-      // Actualizar según el tipo de bucket
-      if (file.bucket === 'panoramas') {
-        // Actualizar panorama_photos
+      if (file.type === 'panorama') {
         const { error } = await customSupabase
           .from('panorama_photos')
           .update({
@@ -161,23 +206,21 @@ export function useStorageMigration() {
             photo_url_mobile: newUrl,
             photo_url_thumbnail: newUrl,
           })
-          .like('photo_url', `%${file.name}%`);
+          .eq('id', file.recordId);
 
         if (error) console.error('Error actualizando panorama_photos:', error);
-      } else if (file.bucket === 'floor-plans') {
-        // Actualizar floor_plans
+      } else if (file.type === 'floor_plan') {
         const { error } = await customSupabase
           .from('floor_plans')
           .update({ image_url: newUrl })
-          .like('image_url', `%${file.name}%`);
+          .eq('id', file.recordId);
 
         if (error) console.error('Error actualizando floor_plans:', error);
-      } else if (file.bucket === 'cover-images' || file.bucket === 'tour-images') {
-        // Actualizar virtual_tours
+      } else if (file.type === 'cover') {
         const { error } = await customSupabase
           .from('virtual_tours')
           .update({ cover_image_url: newUrl })
-          .like('cover_image_url', `%${file.name}%`);
+          .eq('id', file.recordId);
 
         if (error) console.error('Error actualizando virtual_tours:', error);
       }
