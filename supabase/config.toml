@@ -3,6 +3,12 @@ project_id = "swnhlzcodsnpsqpxaxov"
 [functions.generate-db-backup]
 verify_jwt = true
 
+[functions.generate-full-backup]
+verify_jwt = true
+
+[functions.migrate-to-supabase]
+verify_jwt = true
+
 [functions.auto-backup-scheduler]
 verify_jwt = false
 
