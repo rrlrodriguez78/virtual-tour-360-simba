@@ -49,34 +49,52 @@ export function useStorageMigration() {
 
   const extractBucketAndPath = (url: string): { bucket: string; path: string } | null => {
     try {
+      console.log('🔍 Parsing URL:', url);
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/storage/v1/object/public/');
-      if (pathParts.length < 2) return null;
+      
+      if (pathParts.length < 2) {
+        console.warn('⚠️ URL no tiene formato esperado:', url);
+        return null;
+      }
       
       const [bucket, ...pathSegments] = pathParts[1].split('/');
-      return {
+      const result = {
         bucket,
         path: pathSegments.join('/')
       };
-    } catch {
+      
+      console.log('✅ Parsed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error parsing URL:', url, error);
       return null;
     }
   };
 
   const startScan = async () => {
+    console.log('🚀 Iniciando escaneo de archivos...');
     setIsScanning(true);
     setErrors([]);
     const allFiles: FileToMigrate[] = [];
 
     try {
       // 1. Escanear panorama_photos
+      console.log('📸 Escaneando panorama_photos...');
       setScanProgress(10);
       const { data: panoramas, error: panoramasError } = await customSupabase
         .from('panorama_photos')
         .select('id, photo_url')
         .not('photo_url', 'is', null);
 
-      if (!panoramasError && panoramas) {
+      if (panoramasError) {
+        console.error('❌ Error fetching panoramas:', panoramasError);
+        throw panoramasError;
+      }
+
+      console.log(`✅ Found ${panoramas?.length || 0} panoramas`);
+
+      if (panoramas) {
         panoramas.forEach(p => {
           const parsed = extractBucketAndPath(p.photo_url);
           if (parsed) {
@@ -87,18 +105,28 @@ export function useStorageMigration() {
               type: 'panorama',
               recordId: p.id
             });
+          } else {
+            console.warn('⚠️ No se pudo parsear panorama URL:', p.photo_url);
           }
         });
       }
 
       // 2. Escanear floor_plans
+      console.log('🗺️ Escaneando floor_plans...');
       setScanProgress(40);
       const { data: floorPlans, error: floorPlansError } = await customSupabase
         .from('floor_plans')
         .select('id, image_url')
         .not('image_url', 'is', null);
 
-      if (!floorPlansError && floorPlans) {
+      if (floorPlansError) {
+        console.error('❌ Error fetching floor plans:', floorPlansError);
+        throw floorPlansError;
+      }
+
+      console.log(`✅ Found ${floorPlans?.length || 0} floor plans`);
+
+      if (floorPlans) {
         floorPlans.forEach(fp => {
           const parsed = extractBucketAndPath(fp.image_url);
           if (parsed) {
@@ -109,18 +137,28 @@ export function useStorageMigration() {
               type: 'floor_plan',
               recordId: fp.id
             });
+          } else {
+            console.warn('⚠️ No se pudo parsear floor plan URL:', fp.image_url);
           }
         });
       }
 
       // 3. Escanear virtual_tours cover images
+      console.log('🖼️ Escaneando virtual_tours covers...');
       setScanProgress(70);
       const { data: tours, error: toursError } = await customSupabase
         .from('virtual_tours')
         .select('id, cover_image_url')
         .not('cover_image_url', 'is', null);
 
-      if (!toursError && tours) {
+      if (toursError) {
+        console.error('❌ Error fetching tours:', toursError);
+        throw toursError;
+      }
+
+      console.log(`✅ Found ${tours?.length || 0} tours with covers`);
+
+      if (tours) {
         tours.forEach(t => {
           const parsed = extractBucketAndPath(t.cover_image_url);
           if (parsed) {
@@ -131,17 +169,20 @@ export function useStorageMigration() {
               type: 'cover',
               recordId: t.id
             });
+          } else {
+            console.warn('⚠️ No se pudo parsear cover URL:', t.cover_image_url);
           }
         });
       }
 
+      console.log(`📊 Total archivos encontrados: ${allFiles.length}`);
       setFilesToMigrate(allFiles);
       setFilesFound(allFiles.length);
       setScanProgress(100);
       
       toast.success(`✅ Escaneo completado: ${allFiles.length} archivos encontrados`);
     } catch (error: any) {
-      console.error('Error en el escaneo:', error);
+      console.error('❌ Error en el escaneo:', error);
       toast.error(`Error durante el escaneo: ${error.message}`);
       setErrors(prev => [...prev, `Error general: ${error.message}`]);
     } finally {
@@ -151,6 +192,8 @@ export function useStorageMigration() {
 
   const migrateFile = async (file: FileToMigrate): Promise<MigrationResult> => {
     try {
+      console.log(`📥 Descargando: ${file.bucket}/${file.path}`);
+      
       // 1. Descargar archivo desde URL pública
       const response = await fetch(file.url);
       if (!response.ok) {
@@ -158,8 +201,10 @@ export function useStorageMigration() {
       }
 
       const blob = await response.blob();
+      console.log(`✅ Descargado: ${(blob.size / 1024).toFixed(2)} KB`);
 
       // 2. Subir a tu Supabase personal
+      console.log(`📤 Subiendo a: ${file.bucket}/${file.path}`);
       const { error: uploadError } = await customSupabase.storage
         .from(file.bucket)
         .upload(file.path, blob, {
@@ -177,8 +222,10 @@ export function useStorageMigration() {
         .getPublicUrl(file.path);
 
       const newUrl = publicUrlData.publicUrl;
+      console.log(`✅ Nueva URL: ${newUrl}`);
 
       // 4. Actualizar URLs en la base de datos
+      console.log(`🔄 Actualizando base de datos para ${file.type}...`);
       await updateDatabaseUrls(file, newUrl);
 
       return {
@@ -188,6 +235,7 @@ export function useStorageMigration() {
         newUrl,
       };
     } catch (error: any) {
+      console.error(`❌ Error migrando ${file.bucket}/${file.path}:`, error);
       return {
         success: false,
         file,
