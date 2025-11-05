@@ -10,8 +10,6 @@ import BackupSettings from '@/components/backups/BackupSettings';
 import { BackupSyncHistory } from '@/components/backups/BackupSyncHistory';
 import { TourBackupConfig } from '@/components/backups/TourBackupConfig';
 import { BatchPhotoSync } from '@/components/backups/BatchPhotoSync';
-import { DatabaseBackupButton } from '@/components/backups/DatabaseBackupButton';
-import { MigrationTool } from '@/components/backups/MigrationTool';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -72,25 +70,19 @@ const BackupsPage: React.FC = () => {
         </div>
         
         <Tabs defaultValue="settings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
             <TabsTrigger value="settings">⚙️ Settings</TabsTrigger>
-            <TabsTrigger value="migration">🔄 Migration</TabsTrigger>
-            <TabsTrigger value="sync">📸 Sync Photos</TabsTrigger>
+            <TabsTrigger value="sync">🔄 Sync Photos</TabsTrigger>
             <TabsTrigger value="history">📜 History</TabsTrigger>
           </TabsList>
           
           <TabsContent value="settings" className="space-y-6">
-            <DatabaseBackupButton />
             {tenantId && (
               <>
                 <BackupSettings tenantId={tenantId} />
                 <TourBackupConfig tenantId={tenantId} />
               </>
             )}
-          </TabsContent>
-
-          <TabsContent value="migration">
-            <MigrationTool />
           </TabsContent>
 
           <TabsContent value="sync">
