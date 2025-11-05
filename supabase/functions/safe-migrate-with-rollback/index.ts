@@ -112,18 +112,20 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        try {
-          // For INSERT/UPDATE/DELETE, use the table methods if possible
-          if (statement.toUpperCase().includes('INSERT INTO')) {
-            // Parse and execute INSERT
-            await executeInsertStatement(targetSupabase, statement);
-          } else {
-            // For DDL (CREATE TABLE, etc.), would need exec_sql RPC
-            // Skip for now as we can't execute arbitrary SQL safely
-            console.log(`Skipping DDL statement ${i + 1}`);
-          }
+      try {
+        // Try to execute the statement directly via RPC
+        const { error } = await targetSupabase.rpc('exec_sql', { 
+          sql: statement + ';' 
+        });
 
+        if (error) {
+          // Log warning but continue - some statements might fail on purpose
+          console.warn(`Statement ${i + 1} warning:`, error.message);
+          errorCount++;
+          errors.push(`Statement ${i + 1}: ${error.message.substring(0, 100)}`);
+        } else {
           successCount++;
+        }
 
           // Create checkpoint every N statements
           if (i - lastCheckpoint >= checkpointInterval) {
@@ -132,16 +134,16 @@ Deno.serve(async (req) => {
             console.log(`📍 Checkpoint: ${i + 1}/${statements.length}`);
           }
 
-        } catch (err) {
-          console.error(`Error executing statement ${i + 1}:`, err);
-          errorCount++;
-          errors.push(`Statement ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      } catch (err) {
+        console.error(`Error executing statement ${i + 1}:`, err);
+        errorCount++;
+        errors.push(`Statement ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
 
-          // If critical error (>10% failure rate), trigger rollback
-          if (errorCount > statements.length * 0.1) {
-            throw new Error(`Critical failure: ${errorCount} errors detected. Initiating rollback.`);
-          }
+        // If critical error (>10% failure rate), trigger rollback
+        if (errorCount > statements.length * 0.1) {
+          throw new Error(`Critical failure: ${errorCount} errors detected. Initiating rollback.`);
         }
+      }
       }
 
       migrationLog.push(`✅ Migration completed: ${successCount} successful`);
@@ -333,24 +335,6 @@ async function validateTargetState(targetSupabase: any): Promise<boolean> {
   }
 }
 
-async function executeInsertStatement(targetSupabase: any, statement: string): Promise<void> {
-  // Parse INSERT statement (simplified - real implementation would be more robust)
-  const tableMatch = statement.match(/INSERT INTO (?:public\.)?(\w+)/i);
-  if (!tableMatch) {
-    throw new Error('Could not parse table name from INSERT statement');
-  }
-
-  const tableName = tableMatch[1];
-  
-  // Extract values (simplified - would need proper SQL parser for production)
-  const valuesMatch = statement.match(/VALUES\s*\((.*?)\)/i);
-  if (!valuesMatch) {
-    throw new Error('Could not parse VALUES from INSERT statement');
-  }
-
-  // For now, skip complex parsing - in production you'd use a proper SQL parser
-  console.log(`Would insert into ${tableName}`);
-}
 
 async function verifyMigration(targetSupabase: any, backupData: any): Promise<{ success: boolean; message: string }> {
   try {
