@@ -10,6 +10,7 @@ import BackupSettings from '@/components/backups/BackupSettings';
 import { BackupSyncHistory } from '@/components/backups/BackupSyncHistory';
 import { TourBackupConfig } from '@/components/backups/TourBackupConfig';
 import { BatchPhotoSync } from '@/components/backups/BatchPhotoSync';
+import { DatabaseBackupButton } from '@/components/backups/DatabaseBackupButton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -77,6 +78,7 @@ const BackupsPage: React.FC = () => {
           </TabsList>
           
           <TabsContent value="settings" className="space-y-6">
+            <DatabaseBackupButton />
             {tenantId && (
               <>
                 <BackupSettings tenantId={tenantId} />
