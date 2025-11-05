@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Database, Download, Upload, Loader2, ArrowRight, CheckCircle2, XCircle, AlertTriangle, Info, ShieldCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Database, Download, Upload, Loader2, ArrowRight, CheckCircle2, XCircle, AlertTriangle, Info, ShieldCheck, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -39,6 +40,7 @@ export const MigrationTool = () => {
   const [backupSql, setBackupSql] = useState('');
   const [targetUrl, setTargetUrl] = useState('');
   const [targetServiceKey, setTargetServiceKey] = useState('');
+  const [enableRollback, setEnableRollback] = useState(true);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [migrationResult, setMigrationResult] = useState<any>(null);
 
@@ -125,15 +127,22 @@ export const MigrationTool = () => {
     setIsMigrating(true);
     
     try {
-      toast.info("Iniciando migración...");
+      toast.info(enableRollback 
+        ? "Iniciando migración con protección de rollback..." 
+        : "Iniciando migración sin rollback..."
+      );
       
-      const { data, error } = await supabase.functions.invoke('migrate-to-supabase', {
-        body: {
-          targetUrl,
-          targetServiceKey,
-          sqlBackup: backupSql
+      const { data, error } = await supabase.functions.invoke(
+        enableRollback ? 'safe-migrate-with-rollback' : 'migrate-to-supabase',
+        {
+          body: {
+            targetUrl,
+            targetServiceKey,
+            sqlBackup: backupSql,
+            createBackup: enableRollback
+          }
         }
-      });
+      );
 
       if (error) throw error;
 
@@ -141,9 +150,11 @@ export const MigrationTool = () => {
       setStep('complete');
       
       if (data.success) {
-        toast.success(`Migración completada: ${data.stats.successful} exitosos`);
+        toast.success(`✅ Migración completada: ${data.stats.successful} exitosos`);
+      } else if (data.rollback?.performed) {
+        toast.warning("⚠️ Migración falló pero se revirtió automáticamente");
       } else {
-        toast.error("Migración completada con errores");
+        toast.error("❌ Migración falló");
       }
     } catch (error) {
       console.error('Error migrating:', error);
@@ -407,15 +418,16 @@ export const MigrationTool = () => {
         {step === 'migrate' && (
           <div className="space-y-4">
             <Alert>
+              <Shield className="h-4 w-4" />
               <AlertDescription>
-                <strong>¿Listo para migrar?</strong> Esto copiará toda la estructura y datos al proyecto destino.
+                <strong>Protección de Rollback:</strong> Si la migración falla, todos los cambios se revertirán automáticamente.
               </AlertDescription>
             </Alert>
 
-            <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
+            <div className="bg-muted p-4 rounded-lg space-y-3">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Proyecto Destino:</span>
-                <span className="font-mono">{new URL(targetUrl).hostname}</span>
+                <span className="font-mono text-sm">{new URL(targetUrl).hostname}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tamaño del Backup:</span>
@@ -427,6 +439,28 @@ export const MigrationTool = () => {
                   <span>{validationResult.summary.estimatedRecords.toLocaleString()}</span>
                 </div>
               )}
+              
+              <div className="pt-3 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield className={enableRollback ? "h-4 w-4 text-green-500" : "h-4 w-4 text-muted-foreground"} />
+                    <Label htmlFor="rollback-toggle" className="cursor-pointer">
+                      Rollback Automático
+                    </Label>
+                  </div>
+                  <Switch
+                    id="rollback-toggle"
+                    checked={enableRollback}
+                    onCheckedChange={setEnableRollback}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {enableRollback 
+                    ? "✅ Si falla, se creará un backup y se revertirán todos los cambios automáticamente"
+                    : "⚠️ Sin protección - los cambios no se revertirán si falla"
+                  }
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-2">
@@ -441,6 +475,7 @@ export const MigrationTool = () => {
                 onClick={handleMigrate}
                 disabled={isMigrating}
                 className="flex-1"
+                variant={enableRollback ? "default" : "destructive"}
               >
                 {isMigrating ? (
                   <>
@@ -450,7 +485,7 @@ export const MigrationTool = () => {
                 ) : (
                   <>
                     <Upload className="mr-2 h-4 w-4" />
-                    Iniciar Migración
+                    {enableRollback ? "Migrar con Protección" : "Migrar sin Protección"}
                   </>
                 )}
               </Button>
@@ -461,90 +496,106 @@ export const MigrationTool = () => {
         {/* Step 5: Complete */}
         {step === 'complete' && migrationResult && (
           <div className="space-y-4">
-            <Alert>
-              <AlertDescription>
-                <strong>¿Listo para migrar?</strong> Esto copiará toda la estructura y datos al proyecto destino.
-              </AlertDescription>
-            </Alert>
-
-            <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Proyecto Destino:</span>
-                <span className="font-mono">{new URL(targetUrl).hostname}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tamaño del Backup:</span>
-                <span>{(backupSql.length / 1024).toFixed(2)} KB</span>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setStep('configure')}
-                className="flex-1"
-              >
-                Volver
-              </Button>
-              <Button
-                onClick={handleMigrate}
-                disabled={isMigrating}
-                className="flex-1"
-              >
-                {isMigrating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Migrando...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Iniciar Migración
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Complete */}
-        {step === 'complete' && migrationResult && (
-          <div className="space-y-4">
-            <Alert className={migrationResult.stats.errors > 0 ? 'border-yellow-500' : 'border-green-500'}>
-              {migrationResult.stats.errors > 0 ? (
-                <XCircle className="h-4 w-4 text-yellow-500" />
-              ) : (
+            <Alert className={
+              migrationResult.success 
+                ? 'border-green-500' 
+                : migrationResult.rollback?.performed 
+                  ? 'border-yellow-500' 
+                  : 'border-red-500'
+            }>
+              {migrationResult.success ? (
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
+              ) : migrationResult.rollback?.performed ? (
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              ) : (
+                <XCircle className="h-4 w-4 text-red-500" />
               )}
               <AlertDescription>
-                {migrationResult.stats.errors > 0 
-                  ? 'Migración completada con algunos errores'
-                  : 'Migración completada exitosamente'}
+                {migrationResult.success && 'Migración completada exitosamente'}
+                {!migrationResult.success && migrationResult.rollback?.performed && (
+                  <>
+                    <strong>Migración falló pero se revirtió automáticamente</strong>
+                    <br />
+                    <span className="text-sm">Todos los cambios fueron deshechos. El proyecto destino está en su estado original.</span>
+                  </>
+                )}
+                {!migrationResult.success && !migrationResult.rollback?.performed && 'Migración falló sin rollback'}
+                {migrationResult.criticalFailure && (
+                  <>
+                    <br />
+                    <span className="text-sm font-bold text-red-600">⚠️ ATENCIÓN: Rollback falló - se requiere intervención manual</span>
+                  </>
+                )}
               </AlertDescription>
             </Alert>
 
             <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total de statements:</span>
-                <span className="font-medium">{migrationResult.stats.totalStatements}</span>
+                <span className="font-medium">{migrationResult.stats?.totalStatements || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-green-600">Exitosos:</span>
-                <span className="font-medium text-green-600">{migrationResult.stats.successful}</span>
+                <span className="font-medium text-green-600">{migrationResult.stats?.successful || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-red-600">Errores:</span>
-                <span className="font-medium text-red-600">{migrationResult.stats.errors}</span>
+                <span className="font-medium text-red-600">{migrationResult.stats?.errors || 0}</span>
               </div>
+              
+              {migrationResult.rollback && (
+                <>
+                  <div className="pt-2 mt-2 border-t border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-4 w-4" />
+                      <span className="font-medium">Información de Rollback:</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Rollback ejecutado:</span>
+                      <Badge variant={migrationResult.rollback.performed ? "default" : "secondary"}>
+                        {migrationResult.rollback.performed ? 'Sí' : 'No'}
+                      </Badge>
+                    </div>
+                    {migrationResult.rollback.performed && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Tablas restauradas:</span>
+                          <span>{migrationResult.rollback.tablesRestored || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Registros restaurados:</span>
+                          <span>{migrationResult.rollback.recordsRestored || 0}</span>
+                        </div>
+                      </>
+                    )}
+                    {migrationResult.rollback.reason && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Razón: {migrationResult.rollback.reason}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
-            {migrationResult.stats.errorDetails && migrationResult.stats.errorDetails.length > 0 && (
+            {migrationResult.log && migrationResult.log.length > 0 && (
               <div className="space-y-2">
-                <Label>Detalles de Errores (primeros 10):</Label>
+                <Label>Log de Migración:</Label>
+                <Textarea
+                  value={migrationResult.log.join('\n')}
+                  readOnly
+                  className="font-mono text-xs h-40"
+                />
+              </div>
+            )}
+
+            {migrationResult.stats?.errorDetails && migrationResult.stats.errorDetails.length > 0 && (
+              <div className="space-y-2">
+                <Label>Detalles de Errores:</Label>
                 <Textarea
                   value={migrationResult.stats.errorDetails.join('\n')}
                   readOnly
-                  className="font-mono text-xs h-32"
+                  className="font-mono text-xs h-32 text-red-600"
                 />
               </div>
             )}

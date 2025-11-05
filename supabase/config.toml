@@ -12,6 +12,9 @@ verify_jwt = true
 [functions.validate-migration-compatibility]
 verify_jwt = true
 
+[functions.safe-migrate-with-rollback]
+verify_jwt = true
+
 [functions.auto-backup-scheduler]
 verify_jwt = false
 
