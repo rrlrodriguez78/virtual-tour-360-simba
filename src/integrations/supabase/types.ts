@@ -1190,6 +1190,89 @@ export type Database = {
           },
         ]
       }
+      platform_page_variants: {
+        Row: {
+          code_override: string | null
+          config_id: string
+          created_at: string
+          css_overrides: Json | null
+          id: string
+          is_default: boolean
+          updated_at: string
+          variant_name: string
+        }
+        Insert: {
+          code_override?: string | null
+          config_id: string
+          created_at?: string
+          css_overrides?: Json | null
+          id?: string
+          is_default?: boolean
+          updated_at?: string
+          variant_name: string
+        }
+        Update: {
+          code_override?: string | null
+          config_id?: string
+          created_at?: string
+          css_overrides?: Json | null
+          id?: string
+          is_default?: boolean
+          updated_at?: string
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_page_variants_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "platform_ui_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_ui_config: {
+        Row: {
+          component_path: string
+          created_at: string
+          created_by: string | null
+          feature_flags: Json | null
+          id: string
+          is_active: boolean
+          layout_config: Json | null
+          page_name: string
+          platform: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          component_path: string
+          created_at?: string
+          created_by?: string | null
+          feature_flags?: Json | null
+          id?: string
+          is_active?: boolean
+          layout_config?: Json | null
+          page_name: string
+          platform: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          component_path?: string
+          created_at?: string
+          created_by?: string | null
+          feature_flags?: Json | null
+          id?: string
+          is_active?: boolean
+          layout_config?: Json | null
+          page_name?: string
+          platform?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: string | null

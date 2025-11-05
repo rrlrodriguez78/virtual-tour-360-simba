@@ -1,0 +1,104 @@
+import { ComponentType, lazy, Suspense } from 'react';
+import { Route } from 'react-router-dom';
+import { usePlatform, usePlatformConfig } from '@/hooks/usePlatform';
+
+interface PlatformRouteProps {
+  path: string;
+  webComponent?: ComponentType<any>;
+  androidComponent?: ComponentType<any>;
+  iosComponent?: ComponentType<any>;
+  fallback?: ComponentType<any>;
+  pageName?: string;
+}
+
+export function PlatformRoute({
+  path,
+  webComponent,
+  androidComponent,
+  iosComponent,
+  fallback,
+  pageName,
+}: PlatformRouteProps) {
+  const { platform } = usePlatform();
+  
+  // Extract page name from path if not provided
+  const extractedPageName = pageName || path.split('/').pop() || 'unknown';
+  
+  const { data: config, isLoading } = usePlatformConfig(extractedPageName);
+
+  // Determine which component to render
+  const getComponent = (): ComponentType<any> | null => {
+    // If there's a database configuration with a custom component path, use it
+    if (config && config.component_path && config.component_path !== '') {
+      try {
+        // Dynamic import based on component_path from database
+        // Note: This requires the component to exist in the expected location
+        const DynamicComponent = lazy(() => import(`../${config.component_path}`));
+        return DynamicComponent;
+      } catch (error) {
+        console.error(`Failed to load component from path: ${config.component_path}`, error);
+      }
+    }
+
+    // Otherwise, use the provided platform-specific components
+    switch (platform) {
+      case 'android':
+        return androidComponent || fallback || webComponent || null;
+      case 'ios':
+        return iosComponent || fallback || webComponent || null;
+      case 'web':
+      default:
+        return webComponent || fallback || null;
+    }
+  };
+
+  const Component = getComponent();
+
+  if (!Component) {
+    console.error(`No component found for route: ${path} on platform: ${platform}`);
+    return null;
+  }
+
+  const element = (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    </div>}>
+      <Component />
+    </Suspense>
+  );
+
+  return <Route path={path} element={element} />;
+}
+
+// Helper component for platform-specific rendering within a page
+interface PlatformAdaptiveProps {
+  web?: React.ReactNode;
+  android?: React.ReactNode;
+  ios?: React.ReactNode;
+  shared?: React.ReactNode;
+  fallback?: React.ReactNode;
+}
+
+export function PlatformAdaptive({
+  web,
+  android,
+  ios,
+  shared,
+  fallback,
+}: PlatformAdaptiveProps) {
+  const { platform } = usePlatform();
+
+  const getContent = () => {
+    switch (platform) {
+      case 'android':
+        return android || shared || fallback || null;
+      case 'ios':
+        return ios || shared || fallback || null;
+      case 'web':
+      default:
+        return web || shared || fallback || null;
+    }
+  };
+
+  return <>{getContent()}</>;
+}
