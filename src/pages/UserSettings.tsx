@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Navbar } from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -21,10 +21,8 @@ import {
   RefreshCw,
   Volume2,
   BarChart3,
-  CreditCard,
-  WifiOff
+  CreditCard
 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NotificationsList } from '@/components/settings/NotificationsList';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
@@ -47,46 +45,17 @@ const UserSettings = () => {
   const { settings, loading: settingsLoading, updateSettings } = useUserSettingsContext();
   const { isSuperAdmin } = useIsSuperAdmin();
   const [loading, setLoading] = useState(false);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [profile, setProfile] = useState({
     email: '',
     full_name: '',
     avatar_url: '',
   });
 
-  // Handle online/offline status
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Only redirect if online AND no user
-  useEffect(() => {
-    if (!authLoading && !user && navigator.onLine) {
+    if (!authLoading && !user) {
       navigate('/login');
-    } else if (!authLoading && !user && !navigator.onLine) {
-      toast.info('📴 Viewing cached settings (offline mode)');
     }
   }, [user, authLoading, navigate]);
-
-  // Timeout for loading state
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (settingsLoading) {
-        toast.info('📴 Using cached settings (offline mode)');
-      }
-    }, 5000);
-
-    return () => clearTimeout(timeout);
-  }, [settingsLoading]);
 
   useEffect(() => {
     if (user) {
@@ -130,31 +99,7 @@ const UserSettings = () => {
     }
   };
 
-  const handleUpdateSettings = async (updates: any) => {
-    await updateSettings(updates);
-    
-    // Show warnings for critical settings changes
-    if (updates.cloud_sync === false) {
-      toast.warning('⚠️ Sincronización deshabilitada - datos solo se guardarán localmente');
-    }
-    
-    if (updates.local_storage_limit_mb && updates.local_storage_limit_mb < 200) {
-      toast.warning('⚠️ Límite de almacenamiento bajo - puede afectar tours grandes');
-    }
-    
-    if (updates.backup_frequency === 'manual') {
-      toast.info('ℹ️ Sincronización manual activada - recuerda sincronizar regularmente');
-    }
-    
-    if (updates.image_quality === 'low') {
-      toast.info('ℹ️ Calidad de imagen reducida - menor tamaño de archivos');
-    }
-  };
-
-  // Don't show loading forever - allow cached settings after timeout
-  const showLoading = authLoading || (settingsLoading && Date.now() < 5000);
-  
-  if (showLoading && !settings) {
+  if (authLoading || settingsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -178,15 +123,6 @@ const UserSettings = () => {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Button>
-
-        {isOffline && (
-          <Alert className="mb-6 border-warning/50 bg-warning/10">
-            <WifiOff className="h-4 w-4" />
-            <AlertDescription>
-              📴 <strong>Modo Offline</strong> - Los ajustes se guardan localmente y se sincronizarán cuando vuelvas a estar en línea
-            </AlertDescription>
-          </Alert>
-        )}
 
         <div className="flex items-center gap-3 mb-8">
           <User className="w-8 h-8 text-primary" />
@@ -310,40 +246,40 @@ const UserSettings = () => {
           </TabsContent>
 
           <TabsContent value="appearance">
-            <AppearanceSettings settings={settings} onUpdate={handleUpdateSettings} />
+            <AppearanceSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
 
           <TabsContent value="language">
-            <LanguageRegionSettings settings={settings} onUpdate={handleUpdateSettings} />
+            <LanguageRegionSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
 
           <TabsContent value="privacy">
             <div className="space-y-6">
-              <PrivacySecuritySettings settings={settings} onUpdate={handleUpdateSettings} />
+              <PrivacySecuritySettings settings={settings} onUpdate={updateSettings} />
               {isSuperAdmin && <SettingsAccessAudit />}
             </div>
           </TabsContent>
 
           <TabsContent value="mobile">
             <div className="space-y-6">
-              <MobileSettings settings={settings} onUpdate={handleUpdateSettings} />
+              <MobileSettings settings={settings} onUpdate={updateSettings} />
             </div>
           </TabsContent>
 
           <TabsContent value="sync">
-            <SyncSettings settings={settings} onUpdate={handleUpdateSettings} />
+            <SyncSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
 
           <TabsContent value="media">
-            <AudioVideoSettings settings={settings} onUpdate={handleUpdateSettings} />
+            <AudioVideoSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
 
           <TabsContent value="analytics">
-            <AnalyticsSettings settings={settings} onUpdate={handleUpdateSettings} />
+            <AnalyticsSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
 
           <TabsContent value="account">
-            <AccountSettings settings={settings} onUpdate={handleUpdateSettings} />
+            <AccountSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
 
           <TabsContent value="notifications">

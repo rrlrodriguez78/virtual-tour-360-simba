@@ -2,7 +2,7 @@
  * Utility functions to migrate old panorama photos to new optimized format
  */
 
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { createImageVersions } from './imageOptimization';
 
 interface MigrationResult {

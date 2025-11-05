@@ -6,9 +6,8 @@ import * as LucideIcons from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Hotspot } from '@/types/tour';
 import { useUnifiedPointer } from '@/hooks/useUnifiedPointer';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { PlacementLoadingOverlay } from './PlacementLoadingOverlay';
-import { tourOfflineCache } from '@/utils/tourOfflineCache';
 
 // Helper function to extract filename from URL
 const extractFilename = (url: string): string => {
@@ -34,9 +33,6 @@ interface HotspotEditorProps {
   placementProgress?: number;
   currentPointIndex?: number;
   totalPoints?: number;
-  offlineMode?: boolean;
-  tourId?: string;
-  floorPlanId?: string;
 }
 
 export default function HotspotEditor({
@@ -53,9 +49,6 @@ export default function HotspotEditor({
   placementProgress = 0,
   currentPointIndex = 0,
   totalPoints = 0,
-  offlineMode = false,
-  tourId,
-  floorPlanId,
 }: HotspotEditorProps) {
   const { t } = useTranslation();
   const { getEventCoordinates, preventDefault } = useUnifiedPointer();
@@ -67,31 +60,6 @@ export default function HotspotEditor({
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [showCoordinates, setShowCoordinates] = useState(false);
   const [photosData, setPhotosData] = useState<Record<string, { count: number; names: string[] }>>({});
-  const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(null);
-
-  // Load floor plan image from cache if offline
-  useEffect(() => {
-    const loadCachedImage = async () => {
-      if (offlineMode && tourId && floorPlanId) {
-        const blob = await tourOfflineCache.getFloorPlanImage(tourId, floorPlanId);
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          setCachedImageUrl(url);
-        }
-      } else {
-        setCachedImageUrl(null);
-      }
-    };
-
-    loadCachedImage();
-
-    // Cleanup object URL
-    return () => {
-      if (cachedImageUrl) {
-        URL.revokeObjectURL(cachedImageUrl);
-      }
-    };
-  }, [offlineMode, tourId, floorPlanId]);
 
   // Load panorama photos for all hotspots
   useEffect(() => {
@@ -276,7 +244,7 @@ export default function HotspotEditor({
         >
         <img
           ref={imageRef}
-          src={cachedImageUrl || imageUrl}
+          src={imageUrl}
           alt="Floor plan"
           className="w-full h-auto select-none"
           draggable={false}

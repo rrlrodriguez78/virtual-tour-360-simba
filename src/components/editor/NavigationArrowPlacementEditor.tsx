@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, ImageIcon, Calendar } from 'lucide-react';
 import { NavigationArrowPlacementEditor2D } from './NavigationArrowPlacementEditor2D';
 import { NavigationArrowPlacementEditor3D } from './NavigationArrowPlacementEditor3D';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Select,
   SelectContent,

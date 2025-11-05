@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { MapPin, X, Sparkles, Eye, List } from 'lucide-react';
 import { Hotspot, NavigationPoint } from '@/types/tour';
 import { NavigationArrowPlacementEditor } from './NavigationArrowPlacementEditor';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { NavigationPoint } from '@/types/tour';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

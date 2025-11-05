@@ -59,18 +59,6 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
-- Capacitor (for native mobile features)
-
-## Offline Storage
-
-This app supports full offline functionality with a hybrid storage system:
-
-- **Web**: Uses IndexedDB with 100MB limit
-- **Mobile**: Uses native filesystem with unlimited storage*
-
-*Only limited by device available space
-
-For detailed information about offline storage, see [OFFLINE-NATIVE-STORAGE.md](./OFFLINE-NATIVE-STORAGE.md)
 
 ## How can I deploy this project?
 

@@ -60,32 +60,17 @@ export const UserSettingsProvider = ({ children }: { children: React.ReactNode }
   // Apply other settings globally
   useEffect(() => {
     if (!userSettings.loading) {
-      const { 
-        default_volume, 
-        sound_effects, 
-        autoplay,
-        image_quality,
-        local_storage_limit_mb,
-        data_usage
-      } = userSettings.settings;
+      const { default_volume, sound_effects, autoplay } = userSettings.settings;
       
       // Store in sessionStorage for components to access
       sessionStorage.setItem('app_volume', String(default_volume));
       sessionStorage.setItem('app_sound_effects', String(sound_effects));
       sessionStorage.setItem('app_autoplay', String(autoplay));
-      
-      // Mobile settings
-      sessionStorage.setItem('user_image_quality', image_quality);
-      sessionStorage.setItem('user_storage_limit', String(local_storage_limit_mb));
-      sessionStorage.setItem('user_data_usage', data_usage);
     }
   }, [
     userSettings.settings.default_volume,
     userSettings.settings.sound_effects,
     userSettings.settings.autoplay,
-    userSettings.settings.image_quality,
-    userSettings.settings.local_storage_limit_mb,
-    userSettings.settings.data_usage,
     userSettings.loading
   ]);
 

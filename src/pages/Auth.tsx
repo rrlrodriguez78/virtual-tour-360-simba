@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { MapPin, Loader2, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { MapPin, Loader2, Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
 import { passwordSchema } from '@/lib/passwordValidation';
@@ -163,25 +163,6 @@ const Auth = () => {
       toast.error('Error inesperado al actualizar la contraseña');
     } finally {
       setResetLoading(false);
-    }
-  };
-
-  const handleClearCache = () => {
-    try {
-      // Limpiar todo el localStorage
-      const itemsRemoved = localStorage.length;
-      localStorage.clear();
-      
-      toast.success('✅ Caché limpiado exitosamente', {
-        description: `${itemsRemoved} elementos eliminados. Recargando página...`,
-      });
-      
-      // Recargar después de 1.5 segundos
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (error) {
-      toast.error('Error al limpiar el caché');
     }
   };
 
@@ -338,19 +319,10 @@ const Auth = () => {
             )}
           </div>
 
-          <div className="mt-4 text-center space-y-2">
-            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground block">
+          <div className="mt-4 text-center">
+            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
               {t('auth.backToHome')}
             </Link>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={handleClearCache}
-              className="text-xs text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="h-3 w-3 mr-1" />
-              Limpiar caché del navegador
-            </Button>
           </div>
         </CardContent>
       </Card>

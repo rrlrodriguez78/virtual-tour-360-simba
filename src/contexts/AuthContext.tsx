@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
@@ -22,22 +22,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Detectar si estamos en modo offline (ruta especial)
-    const isOfflineMode = window.location.pathname.startsWith('/offline-theta');
-    
-    if (isOfflineMode) {
-      // En modo offline, no intentamos conectarnos a Supabase
-      setLoading(false);
-      return;
-    }
-
-    // Verificar si hay conexión a internet
-    if (!navigator.onLine) {
-      // Sin internet, marcamos como no cargando para no bloquear la UI
-      setLoading(false);
-      return;
-    }
-
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -47,27 +31,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // THEN check for existing session with timeout
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise<any>((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), 3000)
-          )
-        ]);
-        setSession(session);
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.warn('Session check failed (offline?):', error);
-        setSession(null);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkSession();
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -87,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .from('profiles')
           .select('account_status')
           .eq('id', data.user.id)
-          .maybeSingle();
+          .single();
 
         if (profileError) {
           console.error('Error checking account status:', profileError);

@@ -27,29 +27,26 @@ export const useThetaCamera = () => {
     setState(prev => ({ ...prev, isConnecting: true, error: null }));
     
     try {
-      // 1. Verificar conexión (ahora prueba múltiples IPs automáticamente)
-      toast.info('🔍 Buscando cámara Theta Z1...', { duration: 3000 });
+      // 1. Verificar conexión
+      toast.info('Verificando conexión con Theta Z1...', { duration: 2000 });
       const isReachable = await thetaAPI.current.checkConnection();
       
       if (!isReachable) {
         throw new Error(
-          '❌ No se pudo conectar con la cámara Theta Z1.\n\n' +
-          '📋 Verifica que:\n' +
-          '1. La cámara esté encendida (luz azul parpadeando)\n' +
-          '2. Estés conectado al WiFi de la cámara (THETAXXXXX.OSC)\n' +
-          '3. No tengas VPN activa en tu dispositivo\n' +
-          '4. El WiFi de la cámara esté habilitado\n\n' +
-          '💡 Consejo: Reinicia el WiFi de la cámara si persiste el problema'
+          'No se puede conectar con la cámara Theta Z1. ' +
+          'Verifica que:\n' +
+          '1. La cámara esté encendida\n' +
+          '2. Estés conectado al WiFi de la cámara (THETAXXX)\n' +
+          '3. No tengas VPN activa'
         );
       }
 
       // 2. Obtener info del dispositivo
-      toast.info('✅ Cámara encontrada, conectando...', { duration: 2000 });
       const deviceInfo = await thetaAPI.current.getDeviceInfo();
-      console.log('✅ Theta device info:', deviceInfo);
+      console.log('Theta device info:', deviceInfo);
       
       // 3. Iniciar sesión
-      toast.info('🔐 Iniciando sesión...', { duration: 2000 });
+      toast.info('Iniciando sesión...', { duration: 2000 });
       const sessionId = await thetaAPI.current.startSession();
       
       // 4. Obtener estado de la cámara
@@ -63,17 +60,12 @@ export const useThetaCamera = () => {
       }));
       
       toast.success(
-        `✅ Conectado a ${deviceInfo.model}`,
-        { description: `Batería: ${cameraState.state.batteryLevel}%` }
+        `Conectado a ${deviceInfo.model} (Batería: ${cameraState.state.batteryLevel}%)`
       );
     } catch (err: any) {
-      console.error('❌ Error conectando con Theta:', err);
-      const errorMessage = err.message || 'Error desconocido al conectar';
-      setState(prev => ({ ...prev, error: errorMessage }));
-      toast.error('Error de conexión', { 
-        description: errorMessage,
-        duration: 8000 
-      });
+      console.error('Error conectando con Theta:', err);
+      setState(prev => ({ ...prev, error: err.message }));
+      toast.error(err.message);
     } finally {
       setState(prev => ({ ...prev, isConnecting: false }));
     }

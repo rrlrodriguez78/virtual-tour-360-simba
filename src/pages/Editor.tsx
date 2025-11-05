@@ -4,17 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Navbar } from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import {
-  ArrowLeft,
-  Save,
-  Eye,
-  Plus,
-  Globe,
-  Lock,
-  Copy,
+import { 
+  ArrowLeft, 
+  Save, 
+  Eye, 
+  Plus, 
+  Globe, 
+  Lock, 
+  Copy, 
   Trash2,
   ChevronDown,
   ChevronUp,
@@ -26,10 +26,6 @@ import {
   Trash,
   X,
   MousePointer,
-  Download,
-  Wifi,
-  WifiOff,
-  HelpCircle,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -47,16 +43,10 @@ import { AutoImportDialog } from '@/components/editor/AutoImportDialog';
 import { PhotoGroupDialog } from '@/components/editor/PhotoGroupDialog';
 import { GuidedPlacementOverlay } from '@/components/editor/GuidedPlacementOverlay';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tour, FloorPlan, Hotspot } from '@/types/tour';
 import { useBulkHotspotCreation } from '@/hooks/useBulkHotspotCreation';
 import type { Match } from '@/utils/photoMatcher';
 import { cn } from '@/lib/utils';
-import { SyncStatusIndicator } from '@/components/shared/SyncStatusIndicator';
-import { hybridStorage } from '@/utils/hybridStorage';
-import { useIntelligentSync } from '@/hooks/useIntelligentSync';
-import { OfflineQuickGuide } from '@/components/shared/OfflineQuickGuide';
-import { OfflineTutorialDialog } from '@/components/shared/OfflineTutorialDialog';
 
 const Editor = () => {
   const { id } = useParams();
@@ -87,21 +77,6 @@ const Editor = () => {
   const [isProcessingClick, setIsProcessingClick] = useState(false);
   const [wasSaved, setWasSaved] = useState(false);
   
-  // Offline mode
-  const [offlineMode, setOfflineMode] = useState(false);
-  const [isTourCached, setIsTourCached] = useState(false);
-  const [isPreparingOffline, setIsPreparingOffline] = useState(false);
-  
-  // Intelligent sync
-  const { 
-    isOnline, 
-    isSyncing, 
-    syncProgress, 
-    currentOperation,
-    pendingPhotosCount,
-    syncNow 
-  } = useIntelligentSync({ autoSync: true });
-  
   // Auto-save
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
@@ -116,9 +91,6 @@ const Editor = () => {
   
   // Grupo de Fotos por Plano
   const [photoGroupDialogOpen, setPhotoGroupDialogOpen] = useState(false);
-  
-  // Tutorial dialog
-  const [tutorialOpen, setTutorialOpen] = useState(false);
   
   // Hook for bulk creation
   const { createHotspot, isCreating } = useBulkHotspotCreation(
@@ -137,29 +109,6 @@ const Editor = () => {
       loadTourData();
     }
   }, [user, id]);
-
-  // Sync notification with progress
-  useEffect(() => {
-    if (isSyncing && currentOperation) {
-      toast.loading(`${currentOperation} (${syncProgress}%)`, {
-        id: 'sync-progress',
-        duration: Infinity,
-      });
-    } else {
-      toast.dismiss('sync-progress');
-    }
-  }, [isSyncing, currentOperation, syncProgress]);
-
-  // Check if tour is cached on mount
-  useEffect(() => {
-    const checkCache = async () => {
-      if (id) {
-        const cached = await hybridStorage.loadTour(id);
-        setIsTourCached(!!cached);
-      }
-    };
-    checkCache();
-  }, [id]);
 
   useEffect(() => {
     if (selectedFloorPlan) {
@@ -182,37 +131,6 @@ const Editor = () => {
 
   const loadTourData = async () => {
     try {
-      // Check if offline and tour is cached or pending
-      if (!navigator.onLine) {
-        // Try loading from hybrid storage (supports both cached and pending tours)
-        const offlineTour = await hybridStorage.loadTourOffline(id!);
-        if (offlineTour) {
-          setTour(offlineTour.data);
-          setFloorPlans(offlineTour.floorPlans || []);
-          if (offlineTour.floorPlans?.length > 0) {
-            setSelectedFloorPlan(offlineTour.floorPlans[0]);
-          }
-          setOfflineMode(true);
-          setLoading(false);
-          
-          // Check if it's a pending tour
-          const pending = hybridStorage.getPendingTours();
-          const isPending = pending.some(t => t.id === id);
-          
-          if (isPending) {
-            toast.info('📴 Tour offline - Edita y se sincronizará cuando vuelva internet');
-          } else {
-            toast.info('📴 Modo offline - Usando datos en caché');
-          }
-          return;
-        } else {
-          toast.error('Tour no disponible offline. Prepáralo para uso offline cuando tengas internet.');
-          navigate('/offline-theta');
-          return;
-        }
-      }
-
-      // Online mode - fetch from Supabase
       const { data: tourData, error: tourError } = await supabase
         .from('virtual_tours')
         .select('id, title, description, is_published, tenant_id, created_at, updated_at, password_protected, password_hash, password_updated_at, share_description, share_image_url, cover_image_url, tour_type')
@@ -282,19 +200,6 @@ const Editor = () => {
 
   const loadHotspots = async (floorPlanId: string) => {
     try {
-      // If offline, load from cache
-      if (offlineMode && id) {
-        const cachedTour = await hybridStorage.loadTour(id);
-        if (cachedTour) {
-          const floorPlanHotspots = cachedTour.hotspots.filter(
-            h => h.floor_plan_id === floorPlanId
-          );
-          setHotspots(floorPlanHotspots);
-          return;
-        }
-      }
-
-      // Online mode - fetch from Supabase
       const { data } = await supabase
         .from('hotspots')
         .select('*')
@@ -716,27 +621,6 @@ const Editor = () => {
     toast.info('Modo guiado cancelado');
   };
 
-  const handlePrepareOffline = async () => {
-    if (!id) return;
-    
-    setIsPreparingOffline(true);
-    try {
-      // Save current tour data to hybrid storage
-      if (tour && floorPlans) {
-        await hybridStorage.saveTour(id, tour.title || 'Sin nombre', tour, floorPlans, hotspots);
-      }
-      setIsTourCached(true);
-      toast.success('✅ Tour preparado para uso offline', {
-        description: 'Ahora puedes editar este tour sin conexión'
-      });
-    } catch (error: any) {
-      console.error('Error preparing tour for offline:', error);
-      toast.error(error.message || 'Error al preparar tour offline');
-    } finally {
-      setIsPreparingOffline(false);
-    }
-  };
-
   if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -770,48 +654,8 @@ const Editor = () => {
             </div>
           </div>
 
-          <div className="flex gap-2 items-center">
-            {/* Sync Status Indicator */}
-            <SyncStatusIndicator 
-              isOnline={isOnline}
-              isSyncing={isSyncing}
-              syncProgress={syncProgress}
-              currentOperation={currentOperation}
-              pendingCount={pendingPhotosCount}
-              variant="compact"
-            />
-
-            {/* Offline cache indicator */}
-            {isTourCached && (
-              <Badge variant="default" className="gap-1">
-                ✅ Listo offline
-              </Badge>
-            )}
-
-            {/* Prepare for offline button */}
-            {isOnline && !isTourCached && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handlePrepareOffline}
-                disabled={isPreparingOffline}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {isPreparingOffline ? 'Preparando...' : 'Preparar offline'}
-              </Button>
-            )}
-
-            {/* Help / Tutorial button */}
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setTutorialOpen(true)}
-              title="Ver tutorial de trabajo offline"
-            >
-              <HelpCircle className="w-4 h-4" />
-            </Button>
-
-            <Button variant="outline" onClick={togglePublish} disabled={offlineMode}>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={togglePublish}>
               {tour?.is_published ? (
                 <>
                   <Lock className="w-4 h-4 mr-2" />
@@ -832,18 +676,6 @@ const Editor = () => {
             )}
           </div>
         </div>
-
-        {/* Offline mode alert */}
-        {offlineMode && (
-          <Alert className="mb-4">
-            <WifiOff className="h-4 w-4" />
-            <AlertDescription>
-              📴 <strong>Modo Offline</strong> - Estás trabajando con datos en caché. 
-              Puedes ver el tour y capturar fotos con Theta Z1, pero no puedes editar posiciones de hotspots ni publicar cambios.
-              Los cambios se sincronizarán al conectarte.
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Main Editor */}
         <div className="grid lg:grid-cols-4 gap-6">
@@ -927,12 +759,7 @@ const Editor = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem 
-                            disabled={offlineMode}
                             onClick={() => {
-                              if (offlineMode) {
-                                toast.error('No disponible en modo offline');
-                                return;
-                              }
                               const newMoveMode = !moveMode;
                               setMoveMode(newMoveMode);
                               if (newMoveMode) {
@@ -950,12 +777,7 @@ const Editor = () => {
                             {moveMode ? 'Desactivar' : 'Activar'} Mover
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            disabled={offlineMode}
                             onClick={() => {
-                              if (offlineMode) {
-                                toast.error('No disponible en modo offline');
-                                return;
-                              }
                               const newSelectMode = !selectMode;
                               setSelectMode(newSelectMode);
                               if (newSelectMode) {
@@ -985,7 +807,6 @@ const Editor = () => {
                       </DropdownMenu>
                       <Button 
                         onClick={() => setAddPointMode(!addPointMode)}
-                        disabled={offlineMode}
                         className={cn(
                           "transition-all duration-300",
                           addPointMode
@@ -998,7 +819,7 @@ const Editor = () => {
                       </Button>
                       <Button 
                         onClick={() => setImportDialogOpen(true)}
-                        disabled={!selectedFloorPlan || offlineMode}
+                        disabled={!selectedFloorPlan}
                         className={cn(
                           "transition-all duration-300",
                           importDialogOpen
@@ -1012,7 +833,7 @@ const Editor = () => {
                       </Button>
                       <Button 
                         onClick={() => setPhotoGroupDialogOpen(true)}
-                        disabled={!selectedFloorPlan || hotspots.length === 0 || offlineMode}
+                        disabled={!selectedFloorPlan || hotspots.length === 0}
                         className={cn(
                           "transition-all duration-300",
                           photoGroupDialogOpen
@@ -1059,9 +880,6 @@ const Editor = () => {
                         placementProgress={placementProgress}
                         currentPointIndex={currentGuidedIndex}
                         totalPoints={guidedMatches.length}
-                        offlineMode={offlineMode}
-                        tourId={id}
-                        floorPlanId={plan.id}
                       />
                     </TabsContent>
                   ))}
@@ -1251,9 +1069,6 @@ const Editor = () => {
           placementProgress={placementProgress}
         />
       )}
-
-      {/* Tutorial Dialog */}
-      <OfflineTutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
     </div>
   );
 };

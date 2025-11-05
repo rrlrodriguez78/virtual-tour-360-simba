@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Key, Smartphone, Save, Check, X } from 'lucide-react';
 import { UserSettings } from '@/hooks/useUserSettings';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import { validatePassword, checkPasswordStrength } from '@/lib/passwordValidation';

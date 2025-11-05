@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { MapPin, LogOut, Settings, Menu, Home, Globe, User, Sparkles, LayoutDashboard, Plus, Building2, Users, UserCheck, Archive, HardDrive } from 'lucide-react';
+import { MapPin, LogOut, Settings, Menu, Home, Globe, User, Sparkles, LayoutDashboard, Plus, Building2, Users, UserCheck, Archive } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import TenantSwitcher from './TenantSwitcher';
-import { SyncStatusBadge } from '@/components/sync/SyncStatusBadge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +33,6 @@ export const Navbar = () => {
         <div className="flex items-center gap-1 sm:gap-4">
           <TenantSwitcher className="ml-auto" />
           <LanguageSwitcher />
-          {user && <SyncStatusBadge />}
           {user ? (
             <>
               <DropdownMenu>
@@ -79,18 +77,6 @@ export const Navbar = () => {
                     <Link to="/app/backups" className="flex items-center cursor-pointer">
                       <Archive className="w-4 h-4 mr-2" />
                       Backups
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/app/offline-cache" className="flex items-center cursor-pointer">
-                      <HardDrive className="w-4 h-4 mr-2" />
-                      Caché Offline
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/app/system-status" className="flex items-center cursor-pointer">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Estado del Sistema
                     </Link>
                   </DropdownMenuItem>
                 

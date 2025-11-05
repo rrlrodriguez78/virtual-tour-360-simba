@@ -30,7 +30,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { NavigationArrow3D } from './NavigationArrow3D';
 import { ImageNotFoundFallback } from './ImageNotFoundFallback';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { animateValue, delay, easeInOutCubic } from '@/utils/cameraAnimation';
 import { DateSelector } from './DateSelector';
 
@@ -48,8 +48,6 @@ interface PanoramaViewerProps {
   onFloorChange?: (floorPlanId: string) => void;
   hotspotsByFloor?: Record<string, Hotspot[]>;
   tourType?: 'tour_360' | 'photo_tour';
-  isOfflineMode?: boolean;
-  tourId?: string;
 }
 
 export default function PanoramaViewer({ 
@@ -66,8 +64,6 @@ export default function PanoramaViewer({
   onFloorChange,
   hotspotsByFloor = {},
   tourType = 'tour_360',
-  isOfflineMode = false,
-  tourId,
 }: PanoramaViewerProps) {
   const { t, i18n } = useTranslation();
   const { getEventCoordinates, preventDefault } = useUnifiedPointer();
@@ -153,78 +149,52 @@ export default function PanoramaViewer({
     }
     
     const fetchNavigationPoints = async () => {
-      try {
-        let points: any[] = [];
+      let query = supabase
+        .from('hotspot_navigation_points')
+        .select(`
+          *,
+          target_hotspot:to_hotspot_id(*)
+        `)
+        .eq('from_hotspot_id', activePhoto.hotspot_id)
+        .eq('is_active', true)
+        .order('display_order');
+      
+      // Filtrar por fecha si está disponible
+      if (currentCaptureDate) {
+        query = query.eq('capture_date', currentCaptureDate);
+      }
+      
+      const { data, error } = await query;
+      
+      if (!error && data) {
+        setNavigationPoints(data as any);
         
-        // If in offline mode, load from cached data
-        if (isOfflineMode && tourId) {
-          const { hybridStorage } = await import('@/utils/hybridStorage');
-          const cachedTour = await hybridStorage.loadTour(tourId);
-          if (cachedTour) {
-            const hotspot = cachedTour.hotspots.find((h: any) => h.id === activePhoto.hotspot_id);
-            if (hotspot && (hotspot as any).navigation_points) {
-              points = (hotspot as any).navigation_points || [];
-              console.log('✅ Navigation arrows cargados desde offline:', points.length);
-            }
+        // Cargar las fotos de los hotspots de destino
+        const targetHotspotIds = data.map((p: any) => p.to_hotspot_id).filter(Boolean);
+        if (targetHotspotIds.length > 0) {
+          const { data: photosData } = await supabase
+            .from('panorama_photos')
+            .select('hotspot_id, photo_url, photo_url_mobile')
+            .in('hotspot_id', targetHotspotIds)
+            .order('created_at', { ascending: true });
+          
+          if (photosData) {
+            const photoMap: Record<string, string> = {};
+            photosData.forEach((photo: any) => {
+              if (!photoMap[photo.hotspot_id]) {
+                // Usar la primera foto de cada hotspot (priorizar mobile si existe)
+                photoMap[photo.hotspot_id] = photo.photo_url_mobile || photo.photo_url;
+              }
+            });
+            setDestinationPhotos(photoMap);
+            console.log('✅ Fotos de destino cargadas:', photoMap);
           }
         }
-        
-        // If not offline or no cached data, load from Supabase
-        if (points.length === 0) {
-          let query = supabase
-            .from('hotspot_navigation_points')
-            .select(`
-              *,
-              target_hotspot:to_hotspot_id(*)
-            `)
-            .eq('from_hotspot_id', activePhoto.hotspot_id)
-            .eq('is_active', true)
-            .order('display_order');
-          
-          // Filtrar por fecha si está disponible
-          if (currentCaptureDate) {
-            query = query.eq('capture_date', currentCaptureDate);
-          }
-          
-          const { data, error } = await query;
-          
-          if (!error && data) {
-            points = data;
-          }
-        }
-        
-        if (points.length > 0) {
-          setNavigationPoints(points as any);
-          
-          // Cargar las fotos de los hotspots de destino
-          const targetHotspotIds = points.map((p: any) => p.to_hotspot_id).filter(Boolean);
-          if (targetHotspotIds.length > 0) {
-            const { data: photosData } = await supabase
-              .from('panorama_photos')
-              .select('hotspot_id, photo_url, photo_url_mobile')
-              .in('hotspot_id', targetHotspotIds)
-              .order('created_at', { ascending: true });
-            
-            if (photosData) {
-              const photoMap: Record<string, string> = {};
-              photosData.forEach((photo: any) => {
-                if (!photoMap[photo.hotspot_id]) {
-                  // Usar la primera foto de cada hotspot (priorizar mobile si existe)
-                  photoMap[photo.hotspot_id] = photo.photo_url_mobile || photo.photo_url;
-                }
-              });
-              setDestinationPhotos(photoMap);
-              console.log('✅ Fotos de destino cargadas:', photoMap);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error loading navigation points:', error);
       }
     };
     
     fetchNavigationPoints();
-  }, [activePhoto?.hotspot_id, currentCaptureDate, tourType, isOfflineMode, tourId]);
+  }, [activePhoto?.hotspot_id, currentCaptureDate, tourType]);
 
   // Cleanup al desmontar el componente (evita memory leaks en sesiones largas)
   useEffect(() => {

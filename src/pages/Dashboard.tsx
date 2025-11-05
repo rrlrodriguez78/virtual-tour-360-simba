@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Eye, Edit, Trash2, Globe, Lock, Upload, Image as ImageIcon, Shield, Share2, Download, Check, Trash, HardDrive } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Globe, Lock, Upload, Image as ImageIcon, Shield, Share2 } from 'lucide-react';
 import ShareTourDialog from '@/components/share/ShareTourDialog';
 import TourSetupModal from '@/components/editor/TourSetupModal';
 import { TourTypeSelector } from '@/components/editor/TourTypeSelector';
@@ -16,11 +15,6 @@ import { useTranslation } from 'react-i18next';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { TourPasswordDialog } from '@/components/editor/TourPasswordDialog';
-import { OfflineTutorialDialog } from '@/components/shared/OfflineTutorialDialog';
-import { hybridStorage } from '@/utils/hybridStorage';
-import { useOfflineDownload } from '@/hooks/useOfflineDownload';
-import { OfflineDownloadDialog } from '@/components/editor/OfflineDownloadDialog';
-import { useEffect as useReactEffect } from 'react';
 
 interface Organization {
   id: string;
@@ -55,16 +49,6 @@ const Dashboard = () => {
   const [selectedTourForPassword, setSelectedTourForPassword] = useState<Tour | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedTourForShare, setSelectedTourForShare] = useState<{ id: string; title: string } | null>(null);
-  const [tutorialOpen, setTutorialOpen] = useState(false);
-  const [downloadedTours, setDownloadedTours] = useState<Set<string>>(new Set());
-  const [showOnlyOffline, setShowOnlyOffline] = useState(false);
-  const { 
-    isDownloading, 
-    downloadProgress, 
-    downloadTourForOffline, 
-    isTourDownloaded, 
-    deleteTourOffline 
-  } = useOfflineDownload();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -74,52 +58,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (user && currentTenant) {
-      // Auto-limpieza de datos antiguos (>7 días) al cargar
-      const cleanupResult = hybridStorage.cleanAllOldData();
-      if (cleanupResult.toursRemoved > 0 || cleanupResult.keysRemoved > 0) {
-        toast.info('Se limpiaron datos antiguos automáticamente', {
-          description: `${cleanupResult.toursRemoved} tours pendientes y ${cleanupResult.keysRemoved} metadatos obsoletos`
-        });
-      }
-      
       loadData();
     }
   }, [user, currentTenant]);
-
-  // Check which tours are downloaded
-  useReactEffect(() => {
-    const checkDownloaded = async () => {
-      const downloaded = new Set<string>();
-      for (const tour of tours) {
-        const isDownloaded = await isTourDownloaded(tour.id);
-        if (isDownloaded) {
-          downloaded.add(tour.id);
-        }
-      }
-      setDownloadedTours(downloaded);
-    };
-    
-    if (tours.length > 0) {
-      checkDownloaded();
-    }
-  }, [tours, isTourDownloaded]);
-
-  // Refresh downloaded tours after download completes
-  useReactEffect(() => {
-    if (downloadProgress?.stage === 'complete') {
-      const checkDownloaded = async () => {
-        const downloaded = new Set<string>();
-        for (const tour of tours) {
-          const isDownloaded = await isTourDownloaded(tour.id);
-          if (isDownloaded) {
-            downloaded.add(tour.id);
-          }
-        }
-        setDownloadedTours(downloaded);
-      };
-      checkDownloaded();
-    }
-  }, [downloadProgress, tours, isTourDownloaded]);
 
   const loadData = async () => {
     if (!currentTenant) {
@@ -158,7 +99,7 @@ const Dashboard = () => {
       return;
     }
 
-        setSavingTour(true);
+    setSavingTour(true);
     try {
       const { data, error } = await supabase
         .from('virtual_tours')
@@ -305,11 +246,6 @@ const Dashboard = () => {
     );
   }
 
-  // Filter tours based on offline mode
-  const displayTours = showOnlyOffline
-    ? tours.filter(tour => downloadedTours.has(tour.id))
-    : tours;
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -320,31 +256,13 @@ const Dashboard = () => {
             <h1 className="text-4xl font-bold mb-2">{t('dashboard.title')}</h1>
             <p className="text-muted-foreground">
               {t('dashboard.subtitle')}
-              {showOnlyOffline && (
-                <span className="ml-2 text-blue-500 font-medium">
-                  (Mostrando solo tours descargados)
-                </span>
-              )}
             </p>
           </div>
 
-          <div className="flex gap-2">
-            {downloadedTours.size > 0 && (
-              <Button 
-                variant={showOnlyOffline ? "default" : "outline"} 
-                onClick={() => setShowOnlyOffline(!showOnlyOffline)}
-                size="lg"
-              >
-                <HardDrive className="w-5 h-5 mr-2" />
-                {showOnlyOffline ? 'Mostrar Todos' : 'Solo Offline'}
-              </Button>
-            )}
-            
-            <Button size="lg" onClick={() => setTypeSelectorOpen(true)}>
-              <Plus className="w-5 h-5 mr-2" />
-              {t('dashboard.createNew')}
-            </Button>
-          </div>
+          <Button size="lg" onClick={() => setTypeSelectorOpen(true)}>
+            <Plus className="w-5 h-5 mr-2" />
+            {t('dashboard.createNew')}
+          </Button>
           
           <TourTypeSelector
             isOpen={typeSelectorOpen}
@@ -364,47 +282,24 @@ const Dashboard = () => {
           />
         </div>
 
-
-        {displayTours.length === 0 ? (
+        {tours.length === 0 ? (
           <Card className="p-12 text-center">
             <CardHeader>
-              <CardTitle className="text-2xl">
-                {showOnlyOffline 
-                  ? 'No hay tours descargados para offline'
-                  : t('dashboard.noTours')
-                }
-              </CardTitle>
+              <CardTitle className="text-2xl">{t('dashboard.noTours')}</CardTitle>
               <CardDescription>
-                {showOnlyOffline
-                  ? 'Descarga tours para acceder a ellos sin conexión'
-                  : t('dashboard.noToursDescription')
-                }
+                {t('dashboard.noToursDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!showOnlyOffline && (
-                <Button onClick={() => setTypeSelectorOpen(true)} size="lg">
-                  <Plus className="w-5 h-5 mr-2" />
-                  {t('dashboard.createFirstTour')}
-                </Button>
-              )}
+              <Button onClick={() => setTypeSelectorOpen(true)} size="lg">
+                <Plus className="w-5 h-5 mr-2" />
+                {t('dashboard.createFirstTour')}
+              </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...hybridStorage.getPendingTours().map(p => ({
-              id: p.id,
-              title: p.title,
-              description: p.description,
-              is_published: false,
-              created_at: p.createdAt,
-              cover_image_url: p.coverImageUrl,
-              password_protected: false,
-              tour_type: p.tourType,
-              _isPending: true
-            })), ...displayTours].map((tour) => {
-              const isPending = (tour as any)._isPending;
-              return (
+            {tours.map((tour) => (
               <Card key={tour.id} className="p-0 hover:shadow-lg transition-all overflow-hidden">
                 <div className="relative h-32 bg-muted overflow-hidden">
                   {tour.cover_image_url ? (
@@ -434,31 +329,8 @@ const Dashboard = () => {
                   
                   {/* Title and Status Overlay - Top */}
                   <div className="absolute top-1.5 left-1.5 right-1.5 z-10 flex justify-between items-start gap-2">
-                    <div className="backdrop-blur-sm bg-black/40 px-2 py-1 rounded border border-white/20 flex-1 min-w-0 flex items-center gap-1.5">
+                    <div className="backdrop-blur-sm bg-black/40 px-2 py-1 rounded border border-white/20 flex-1 min-w-0">
                       <h3 className="text-white font-semibold text-xs truncate">{tour.title}</h3>
-                      {(() => {
-                        const pending = hybridStorage.getPendingTours();
-                        const isPending = pending.some(t => t.id === tour.id);
-                        const isDownloaded = downloadedTours.has(tour.id);
-                        
-                        if (isPending) {
-                          return (
-                            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-orange-500/80 text-white border-orange-600">
-                              📴 Local
-                            </Badge>
-                          );
-                        }
-                        
-                        if (isDownloaded) {
-                          return (
-                            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-green-500/80 text-white border-green-600">
-                              <Check className="w-2.5 h-2.5 mr-0.5" /> Offline
-                            </Badge>
-                          );
-                        }
-                        
-                        return null;
-                      })()}
                     </div>
                     <TooltipProvider>
                       <Tooltip>
@@ -524,49 +396,6 @@ const Dashboard = () => {
                       </Tooltip>
                     </TooltipProvider>
                     
-                    {/* Download/Delete Offline Button */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={async () => {
-                              if (downloadedTours.has(tour.id)) {
-                                await deleteTourOffline(tour.id, tour.title);
-                                setDownloadedTours(prev => {
-                                  const next = new Set(prev);
-                                  next.delete(tour.id);
-                                  return next;
-                                });
-                              } else {
-                                await downloadTourForOffline(tour.id, tour.title);
-                              }
-                            }}
-                            disabled={isDownloading}
-                            className={`h-7 w-7 p-0 backdrop-blur-sm transition-all border border-white/20 ${
-                              downloadedTours.has(tour.id)
-                                ? 'bg-green-600/60 hover:bg-red-600/60'
-                                : 'bg-black/40 hover:bg-blue-600/60'
-                            }`}
-                          >
-                            {downloadedTours.has(tour.id) ? (
-                              <Trash className="w-3.5 h-3.5" />
-                            ) : (
-                              <Download className="w-3.5 h-3.5" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            {downloadedTours.has(tour.id)
-                              ? 'Eliminar de offline'
-                              : 'Descargar para offline'}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -583,7 +412,7 @@ const Dashboard = () => {
                           <p>{tour.is_published ? t('dashboard.view') : t('dashboard.preview')}</p>
                         </TooltipContent>
                       </Tooltip>
-                    </TooltipProvider>
+                     </TooltipProvider>
                     
                     {tour.is_published && (
                       <>
@@ -657,8 +486,7 @@ const Dashboard = () => {
                   </TooltipProvider>
                 </div>
               </Card>
-              );
-            })}
+            ))}
           </div>
         )}
       </div>
@@ -703,11 +531,6 @@ const Dashboard = () => {
           tourTitle={selectedTourForShare.title}
         />
       )}
-
-      <OfflineTutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
-      
-      {/* Download Progress Dialog */}
-      <OfflineDownloadDialog open={isDownloading} progress={downloadProgress} />
     </div>
   );
 };

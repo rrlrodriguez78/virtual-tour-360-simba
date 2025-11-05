@@ -20,20 +20,10 @@ interface OptimizationResult {
   format: string;
 }
 
-/**
- * Get user image quality preference from session storage
- */
-const getUserImageQuality = (): number => {
-  const quality = sessionStorage.getItem('user_image_quality');
-  if (quality === 'low') return 0.60;
-  if (quality === 'medium') return 0.75;
-  return 0.85; // high (default)
-};
-
 const DEFAULT_OPTIONS: Required<OptimizationOptions> = {
   maxWidth: 4000,
   maxHeight: 4000,
-  quality: getUserImageQuality(),
+  quality: 0.85,
   format: 'webp',
   maxSizeMB: 10,
 };

@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 import { FloorPlan } from '@/types/tour';
 import { optimizeImage, validateImageFile, formatFileSize } from '@/utils/imageOptimization';

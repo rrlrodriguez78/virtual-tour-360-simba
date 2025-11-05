@@ -5,9 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Trash2, GripVertical, Eye, Calendar as CalendarIcon, Camera, Loader2, RefreshCw, Wifi, WifiOff } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { Upload, Trash2, GripVertical, Eye, Calendar as CalendarIcon, Camera } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -17,8 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThetaCameraConnector } from './ThetaCameraConnector';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useTenant } from '@/contexts/TenantContext';
-import { SyncQueuePanel } from './SyncQueuePanel';
-import { useThetaWiFiDetector } from '@/hooks/useThetaWiFiDetector';
 import { 
   createImageVersions, 
   validateImageFile, 
@@ -75,9 +72,7 @@ export default function PanoramaManager({ hotspotId, tourId }: PanoramaManagerPr
   const [tourInfo, setTourInfo] = useState<TourInfo | null>(null);
   const [photoSubTab, setPhotoSubTab] = useState<'upload' | 'theta'>('upload');
   const { currentTenant } = useTenant();
-  const { pendingCount, isSyncing, isOnline, syncNow, refreshCount } = useOfflineSync(hotspotId);
-  const { isThetaWiFi, hasRealInternet } = useThetaWiFiDetector();
-  const [showSyncQueue, setShowSyncQueue] = useState(false);
+  const { pendingCount, isSyncing, isOnline, syncNow } = useOfflineSync(hotspotId);
   
   // Recuperar la última fecha usada de localStorage, o usar hoy por defecto
   const [uploadDate, setUploadDate] = useState<Date>(() => {
@@ -95,15 +90,9 @@ export default function PanoramaManager({ hotspotId, tourId }: PanoramaManagerPr
   } | null>(null);
 
   useEffect(() => {
-    // Solo cargar fotos si tenemos internet real (no WiFi de Theta)
-    if (!isThetaWiFi) {
-      loadPhotos();
-      loadTourInfo();
-    } else {
-      console.log('⚠️ Modo WiFi Theta detectado - No se cargan fotos desde Supabase');
-      setLoading(false);
-    }
-  }, [hotspotId, isThetaWiFi]);
+    loadPhotos();
+    loadTourInfo();
+  }, [hotspotId]);
 
   const loadTourInfo = async () => {
     try {
@@ -506,31 +495,13 @@ export default function PanoramaManager({ hotspotId, tourId }: PanoramaManagerPr
 
   return (
     <div className="space-y-4">
-      {/* Alerta cuando está conectado al WiFi de la Theta */}
-      {isThetaWiFi && (
-        <Alert>
-          <Camera className="w-4 h-4" />
-          <AlertDescription>
-            🔷 Conectado al WiFi de Theta Z1 - Solo captura disponible. Las fotos desde Supabase se cargarán cuando reconectes a internet.
-          </AlertDescription>
-        </Alert>
-      )}
-      
       <Tabs value={photoSubTab} onValueChange={(v) => setPhotoSubTab(v as 'upload' | 'theta')}>
         <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="upload" className="gap-2" disabled={isThetaWiFi}>
+          <TabsTrigger value="upload" className="gap-2">
             <Upload className="w-4 h-4" />
             Subir Fotos
             {pendingCount > 0 && (
-              <Badge 
-                variant="secondary" 
-                className="ml-1 gap-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowSyncQueue(!showSyncQueue);
-                }}
-              >
-                {isSyncing && <Loader2 className="w-3 h-3 animate-spin" />}
+              <Badge variant="secondary" className="ml-1">
                 {pendingCount}
               </Badge>
             )}
@@ -542,57 +513,6 @@ export default function PanoramaManager({ hotspotId, tourId }: PanoramaManagerPr
         </TabsList>
 
         <TabsContent value="upload" className="space-y-4">
-          {/* Sync controls */}
-          {pendingCount > 0 && (
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border">
-              <div className="flex-1 flex items-center gap-2">
-                {isOnline ? (
-                  <>
-                    <Wifi className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">
-                      {isSyncing 
-                        ? `Sincronizando ${pendingCount} foto(s)...` 
-                        : `${pendingCount} foto(s) pendiente(s)`
-                      }
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <WifiOff className="w-4 h-4 text-destructive" />
-                    <span className="text-sm">{pendingCount} foto(s) esperando conexión</span>
-                  </>
-                )}
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowSyncQueue(!showSyncQueue)}
-                className="gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                {showSyncQueue ? 'Ocultar Cola' : 'Ver Cola'}
-              </Button>
-              {isOnline && !isSyncing && (
-                <Button
-                  size="sm"
-                  onClick={syncNow}
-                  className="gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Sincronizar Ahora
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* Sync queue panel */}
-          {showSyncQueue && (
-            <SyncQueuePanel 
-              hotspotId={hotspotId}
-              onRetry={syncNow}
-            />
-          )}
-
           <div className="space-y-2">
             <Label>{t('panorama.upload')}</Label>
         
@@ -774,7 +694,7 @@ export default function PanoramaManager({ hotspotId, tourId }: PanoramaManagerPr
               tourId={tourId || tourInfo.tourId}
               tenantId={currentTenant.tenant_id}
               onPhotoSaved={() => {
-                refreshCount();
+                syncNow();
                 loadPhotos();
               }}
             />

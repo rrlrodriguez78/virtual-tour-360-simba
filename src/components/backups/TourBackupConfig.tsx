@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, Cloud, HardDrive, Calendar, Settings2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/custom-client';
+import { supabase } from '@/integrations/supabase/client';
 import { useTourBackupConfig } from '@/hooks/useTourBackupConfig';
 import { toast } from 'sonner';
 
