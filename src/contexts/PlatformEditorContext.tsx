@@ -133,12 +133,7 @@ export const PlatformEditorProvider: React.FC<{ children: React.ReactNode }> = (
 
   const openEditor = () => setIsEditorOpen(true);
   const closeEditor = () => {
-    if (hasUnsavedChanges) {
-      const confirm = window.confirm('¿Descartar cambios sin guardar?');
-      if (!confirm) return;
-    }
     setIsEditorOpen(false);
-    revertChanges();
   };
 
   const saveChanges = async () => {
