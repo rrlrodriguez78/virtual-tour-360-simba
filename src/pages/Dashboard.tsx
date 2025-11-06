@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Eye, Edit, Trash2, Globe, Lock, Upload, Image as ImageIcon, Shield, Share2 } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Globe, Lock, Upload, Image as ImageIcon, Shield, Share2, ArrowLeft } from 'lucide-react';
 import ShareTourDialog from '@/components/share/ShareTourDialog';
 import TourSetupModal from '@/components/editor/TourSetupModal';
 import { TourTypeSelector } from '@/components/editor/TourTypeSelector';
@@ -251,36 +251,46 @@ const Dashboard = () => {
       <Navbar />
       
       <div className="container mx-auto px-4 pt-24 pb-12">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">{t('dashboard.title')}</h1>
-            <p className="text-muted-foreground">
-              {t('dashboard.subtitle')}
-            </p>
-          </div>
-
-          <Button size="lg" onClick={() => setTypeSelectorOpen(true)}>
-            <Plus className="w-5 h-5 mr-2" />
-            {t('dashboard.createNew')}
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          
-          <TourTypeSelector
-            isOpen={typeSelectorOpen}
-            onClose={() => setTypeSelectorOpen(false)}
-            onSelect={handleTourTypeSelect}
-          />
-          
-          <TourSetupModal
-            isOpen={modalOpen}
-            onClose={() => {
-              setModalOpen(false);
-              setSelectedTourType(null);
-            }}
-            onConfirm={handleCreateTour}
-            isSaving={savingTour}
-            tourType={selectedTourType}
-          />
+          <div className="flex-1 flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">{t('dashboard.title')}</h1>
+              <p className="text-muted-foreground">
+                {t('dashboard.subtitle')}
+              </p>
+            </div>
+
+            <Button size="lg" onClick={() => setTypeSelectorOpen(true)}>
+              <Plus className="w-5 h-5 mr-2" />
+              {t('dashboard.createNew')}
+            </Button>
+          </div>
         </div>
+        
+        <TourTypeSelector
+          isOpen={typeSelectorOpen}
+          onClose={() => setTypeSelectorOpen(false)}
+          onSelect={handleTourTypeSelect}
+        />
+        
+        <TourSetupModal
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setSelectedTourType(null);
+          }}
+          onConfirm={handleCreateTour}
+          isSaving={savingTour}
+          tourType={selectedTourType}
+        />
 
         {tours.length === 0 ? (
           <Card className="p-12 text-center">

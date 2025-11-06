@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Eye, Globe, Search, Lock, Heart, MessageSquare } from 'lucide-react';
+import { Eye, Globe, Search, Lock, Heart, MessageSquare, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -201,8 +201,18 @@ const PublicTours = () => {
       <div className="container mx-auto px-4 pt-24 pb-12">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{t('publicTours.title')}</h1>
-          <p className="text-muted-foreground">{t('publicTours.subtitle')}</p>
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="h-10 w-10"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-4xl font-bold">{t('publicTours.title')}</h1>
+          </div>
+          <p className="text-muted-foreground pl-14">{t('publicTours.subtitle')}</p>
         </div>
 
         {/* Search Bar */}
