@@ -75,6 +75,23 @@ export const SplitViewProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [location, isWindowOpen]);
 
+  // Responder a solicitudes de ruta actual desde Split View
+  useEffect(() => {
+    const channel = new BroadcastChannel('split-view-sync');
+    
+    channel.onmessage = (event) => {
+      if (event.data.type === 'REQUEST_CURRENT_ROUTE') {
+        const currentRoute = location.pathname + location.search;
+        channel.postMessage({
+          type: 'CURRENT_ROUTE_RESPONSE',
+          route: currentRoute
+        });
+      }
+    };
+
+    return () => channel.close();
+  }, [location]);
+
   // Cleanup SOLO cuando la aplicación completa se cierra (unmount del provider)
   useEffect(() => {
     return () => {
