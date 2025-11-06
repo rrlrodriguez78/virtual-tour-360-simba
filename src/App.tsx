@@ -13,7 +13,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Inicio from "./pages/Inicio";
 import Dashboard from "./pages/Dashboard";
-import { PlatformRoute } from "./components/PlatformRoute";
+import { PlatformRouteElement } from "./components/PlatformRoute";
 import PublicTours from "./pages/PublicTours";
 import Editor from "./pages/Editor";
 import PhotoEditor from "./pages/PhotoEditor";
@@ -61,7 +61,7 @@ const App = () => (
                   
                   {/* Protected routes */}
                   <Route path="/app/inicio" element={<Inicio />} />
-                  <PlatformRoute path="/app/tours" webComponent={Dashboard} pageName="Dashboard" />
+                  <Route path="/app/tours" element={<PlatformRouteElement webComponent={Dashboard} pageName="Dashboard" />} />
                   <Route path="/app/tours-publicos" element={<PublicTours />} />
                   <Route path="/app/editor/:id" element={<Editor />} />
                   <Route path="/app/photo-editor/:id" element={<PhotoEditor />} />

@@ -1,30 +1,23 @@
 import { ComponentType, lazy, Suspense } from 'react';
-import { Route } from 'react-router-dom';
 import { usePlatform, usePlatformConfig } from '@/hooks/usePlatform';
 
-interface PlatformRouteProps {
-  path: string;
+interface PlatformRouteElementProps {
   webComponent?: ComponentType<any>;
   androidComponent?: ComponentType<any>;
   iosComponent?: ComponentType<any>;
   fallback?: ComponentType<any>;
-  pageName?: string;
+  pageName: string;
 }
 
-export function PlatformRoute({
-  path,
+export function PlatformRouteElement({
   webComponent,
   androidComponent,
   iosComponent,
   fallback,
   pageName,
-}: PlatformRouteProps) {
+}: PlatformRouteElementProps) {
   const { platform } = usePlatform();
-  
-  // Extract page name from path if not provided
-  const extractedPageName = pageName || path.split('/').pop() || 'unknown';
-  
-  const { data: config, isLoading } = usePlatformConfig(extractedPageName);
+  const { data: config, isLoading } = usePlatformConfig(pageName);
 
   // Determine which component to render
   const getComponent = (): ComponentType<any> | null => {
@@ -44,7 +37,7 @@ export function PlatformRoute({
     if (webComponent || androidComponent || iosComponent) {
       try {
         // Extract the base path from provided components
-        const basePath = extractedPageName;
+        const basePath = pageName;
         
         // Try to load platform-specific variant
         switch (platform) {
@@ -76,9 +69,9 @@ export function PlatformRoute({
             } catch {
               return fallback || null;
             }
-        }
+         }
       } catch (error) {
-        console.error(`Failed to load platform variant for: ${extractedPageName}`, error);
+        console.error(`Failed to load platform variant for: ${pageName}`, error);
       }
     }
 
@@ -97,19 +90,17 @@ export function PlatformRoute({
   const Component = getComponent();
 
   if (!Component) {
-    console.error(`No component found for route: ${path} on platform: ${platform}`);
+    console.error(`No component found for page: ${pageName} on platform: ${platform}`);
     return null;
   }
 
-  const element = (
+  return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
     </div>}>
       <Component />
     </Suspense>
   );
-
-  return <Route path={path} element={element} />;
 }
 
 // Helper component for platform-specific rendering within a page
