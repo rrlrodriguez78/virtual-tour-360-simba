@@ -33,6 +33,7 @@ import PWASplashGenerator from "./pages/PWASplashGenerator";
 import BackupsPage from "./pages/BackupsPage";
 import AuthCallback from "./pages/AuthCallback";
 import PlatformUIManager from "./pages/PlatformUIManager";
+import PlatformControlCenter from "./pages/PlatformControlCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ const App = () => (
                   <Route path="/app/pwa-splash" element={<PWASplashGenerator />} />
                   <Route path="/app/backups" element={<BackupsPage />} />
                   <Route path="/app/platform-ui-manager" element={<PlatformUIManager />} />
+                  <Route path="/app/platform-control" element={<PlatformControlCenter />} />
                   
                   {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />
