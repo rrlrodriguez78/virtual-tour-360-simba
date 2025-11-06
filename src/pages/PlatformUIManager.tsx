@@ -6,11 +6,8 @@ import { InfoIcon, Monitor, Smartphone, GitCompare } from 'lucide-react';
 import { PlatformConfigList } from '@/components/platform-manager/PlatformConfigList';
 import { PlatformConfigEditor } from '@/components/platform-manager/PlatformConfigEditor';
 import { PlatformComparison } from '@/components/platform-manager/PlatformComparison';
-import { usePlatformUIConfigs } from '@/hooks/usePlatformUIManagement';
+import { usePlatformUIConfigs, PlatformUIConfig } from '@/hooks/usePlatformUIManagement';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
-import type { Database } from '@/integrations/supabase/types';
-
-type PlatformUIConfig = Database['public']['Tables']['platform_ui_config']['Row'];
 
 export default function PlatformUIManager() {
   const { data: configs, isLoading, refetch } = usePlatformUIConfigs();

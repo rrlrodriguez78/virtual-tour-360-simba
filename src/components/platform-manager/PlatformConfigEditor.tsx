@@ -6,14 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useCreatePlatformUIConfig, useUpdatePlatformUIConfig } from '@/hooks/usePlatformUIManagement';
+import { useCreatePlatformUIConfig, useUpdatePlatformUIConfig, PlatformUIConfig } from '@/hooks/usePlatformUIManagement';
 import { toast } from 'sonner';
-import type { Database } from '@/integrations/supabase/types';
 import { LayoutVisualEditor } from './LayoutVisualEditor';
 import { FeatureFlagsEditor } from './FeatureFlagsEditor';
 import { PlatformPreview } from './PlatformPreview';
-
-type PlatformUIConfig = Database['public']['Tables']['platform_ui_config']['Row'];
 
 interface PlatformConfigEditorProps {
   config?: PlatformUIConfig;

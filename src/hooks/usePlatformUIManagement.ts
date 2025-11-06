@@ -11,6 +11,7 @@ export interface PlatformUIConfig {
   layout_config: Record<string, any>;
   feature_flags: Record<string, any>;
   version: number;
+  created_by?: string | null;
   created_at: string;
   updated_at: string;
 }
