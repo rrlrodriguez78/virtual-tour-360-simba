@@ -20,7 +20,9 @@ Este proyecto implementa un sistema de separación completa entre interfaces Web
 ```
 src/pages/
   ├── Dashboard.tsx          → Interfaz Web (desktop)
-  └── Dashboard.android.tsx  → Interfaz Android (móvil)
+  ├── Dashboard.android.tsx  → Interfaz Android (móvil)
+  ├── Editor.tsx             → Editor de tours Web (desktop)
+  └── Editor.android.tsx     → Editor de tours Android (optimizado para táctil)
 ```
 
 ### Código Compartido (Sin Separación)

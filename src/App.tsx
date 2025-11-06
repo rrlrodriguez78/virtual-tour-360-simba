@@ -21,6 +21,7 @@ import DashboardAndroid from "./pages/Dashboard.android";
 import { PlatformRouteElement } from "./components/PlatformRoute";
 import PublicTours from "./pages/PublicTours";
 import Editor from "./pages/Editor";
+import EditorAndroid from "./pages/Editor.android";
 import PhotoEditor from "./pages/PhotoEditor";
 import Viewer from "./pages/Viewer";
 import SharedTour from "./pages/SharedTour";
@@ -74,7 +75,7 @@ const App = () => (
                   <Route path="/app/inicio" element={<Inicio />} />
                   <Route path="/app/tours" element={<PlatformRouteElement webComponent={Dashboard} androidComponent={DashboardAndroid} pageName="Dashboard" />} />
                   <Route path="/app/tours-publicos" element={<PublicTours />} />
-                  <Route path="/app/editor/:id" element={<Editor />} />
+                  <Route path="/app/editor/:id" element={<PlatformRouteElement webComponent={Editor} androidComponent={EditorAndroid} pageName="Editor" />} />
                   <Route path="/app/photo-editor/:id" element={<PhotoEditor />} />
                   <Route path="/app/settings" element={<Settings />} />
                   <Route path="/app/user-settings" element={<UserSettings />} />
