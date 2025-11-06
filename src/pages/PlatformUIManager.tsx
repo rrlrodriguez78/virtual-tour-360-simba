@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { InfoIcon, Settings, Plus, GitCompare, GitBranch } from 'lucide-react';
+import { InfoIcon, Settings, Plus, GitCompare, GitBranch, ArrowLeft } from 'lucide-react';
 import { PlatformConfigList } from '@/components/platform-manager/PlatformConfigList';
 import { PlatformConfigEditor } from '@/components/platform-manager/PlatformConfigEditor';
 import { PlatformComparison } from '@/components/platform-manager/PlatformComparison';
@@ -14,6 +16,7 @@ import { usePlatformUIConfigs, PlatformUIConfig, useRollbackVersion } from '@/ho
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
 
 export default function PlatformUIManager() {
+  const navigate = useNavigate();
   const { data: configs, isLoading, refetch } = usePlatformUIConfigs();
   const { isSuperAdmin, loading: isLoadingAdmin } = useIsSuperAdmin();
   const rollbackMutation = useRollbackVersion();
@@ -74,11 +77,22 @@ export default function PlatformUIManager() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 pt-24 pb-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">
-            Platform UI Manager
-          </h1>
-          <p className="text-muted-foreground text-lg">
+        <div className="mb-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="h-10 w-10"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-4xl font-bold flex items-center gap-3">
+              <Settings className="h-10 w-10" />
+              Platform UI Manager
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-lg pl-[52px]">
             Configure how each page looks on Web and Android with advanced visual editor
           </p>
         </div>

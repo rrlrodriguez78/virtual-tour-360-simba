@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Users, Trash2, Edit, Plus, Flag } from 'lucide-react';
+import { Building2, Users, Trash2, Edit, Plus, Flag, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import {
@@ -189,23 +189,33 @@ export default function SuperAdminDashboard() {
     <div className="min-h-screen bg-background pt-16">
       <Navbar />
       <div className="container mx-auto px-6 pt-24 pb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Building2 className="h-8 w-8" />
-              Super Admin Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-2">Gestiona todos los tenants del sistema</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/app/feature-management')}>
-              <Flag className="h-4 w-4 mr-2" />
-              Features
-            </Button>
-            <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Tenant
-            </Button>
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Building2 className="h-8 w-8" />
+                Super Admin Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-2">Gestiona todos los tenants del sistema</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate('/app/feature-management')}>
+                <Flag className="h-4 w-4 mr-2" />
+                Features
+              </Button>
+              <Button onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Tenant
+              </Button>
+            </div>
           </div>
         </div>
 

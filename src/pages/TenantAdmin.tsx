@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Users, UserPlus, Trash2, Mail } from 'lucide-react';
+import { Users, UserPlus, Trash2, Mail, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -255,21 +255,31 @@ export default function TenantAdmin() {
     <div className="min-h-screen bg-background pt-16">
       <Navbar />
       <div className="container mx-auto px-6 pt-24 pb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Users className="h-8 w-8" />
-              Gestión de Usuarios
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Administra los usuarios de{' '}
-              <span className="font-semibold">{currentTenant?.tenant_name}</span>
-            </p>
-          </div>
-          <Button onClick={() => setShowUserDialog(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Agregar Usuario
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Button>
+          <div className="flex-1 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Users className="h-8 w-8" />
+                Gestión de Usuarios
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Administra los usuarios de{' '}
+                <span className="font-semibold">{currentTenant?.tenant_name}</span>
+              </p>
+            </div>
+            <Button onClick={() => setShowUserDialog(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Agregar Usuario
+            </Button>
+          </div>
         </div>
 
         <Card>

@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Navbar } from '@/components/Navbar';
 import { toast } from 'sonner';
-import { Plus, Save, Trash2, Flag, Users, Globe } from 'lucide-react';
+import { Plus, Save, Trash2, Flag, Users, Globe, ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -269,18 +269,27 @@ export default function FeatureManagement() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto pt-24 pb-8 px-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Feature Management</h1>
-            <p className="text-muted-foreground">Feature control per tenant</p>
-          </div>
-          <Dialog open={showNewFeatureDialog} onOpenChange={setShowNewFeatureDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                New Feature
-              </Button>
-            </DialogTrigger>
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">Feature Management</h1>
+              <p className="text-muted-foreground">Feature control per tenant</p>
+            </div>
+            <Dialog open={showNewFeatureDialog} onOpenChange={setShowNewFeatureDialog}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Feature
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Feature</DialogTitle>
@@ -351,7 +360,8 @@ export default function FeatureManagement() {
                 <Button onClick={createFeature}>Create</Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <Tabs defaultValue="features">

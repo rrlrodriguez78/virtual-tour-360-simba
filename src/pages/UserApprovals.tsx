@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserCheck, UserX, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { UserCheck, UserX, Clock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import {
@@ -164,7 +164,15 @@ export default function UserApprovals() {
     <div className="min-h-screen bg-background pt-16">
       <Navbar />
       <div className="container mx-auto px-6 pt-24 pb-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <UserCheck className="h-8 w-8" />
