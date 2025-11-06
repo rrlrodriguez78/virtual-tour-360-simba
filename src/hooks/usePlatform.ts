@@ -76,19 +76,20 @@ export function usePlatform(): PlatformInfo {
 }
 
 // Hook to get platform-specific UI configuration from database
-export function usePlatformConfig(pageName: string) {
+export function usePlatformConfig(pageName: string, forcePlatform?: 'web' | 'android' | 'ios') {
   const { platform } = usePlatform();
+  const targetPlatform = forcePlatform || platform;
 
   return useQuery({
-    queryKey: ['platform-config', pageName, platform],
+    queryKey: ['platform-config', pageName, targetPlatform],
     queryFn: async () => {
+      // CRITICAL: Only query for the specific platform to ensure isolation
       const { data, error } = await supabase
         .from('platform_ui_config')
         .select('*')
         .eq('page_name', pageName)
-        .in('platform', [platform, 'both'])
+        .eq('platform', targetPlatform) // Changed from .in() to .eq() for strict isolation
         .eq('is_active', true)
-        .order('platform', { ascending: false }) // Prioritize specific platform over 'both'
         .limit(1)
         .maybeSingle();
 

@@ -7,8 +7,10 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./components/contexts/ThemeContext";
 import { UserSettingsProvider } from "./contexts/UserSettingsContext";
 import { TenantProvider } from "./contexts/TenantContext";
+import { PlatformEditorProvider } from "./contexts/PlatformEditorContext";
 import { A11ySkipLink } from "./components/A11ySkipLink";
 import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
+import { GlobalPlatformEditor } from "./components/platform-manager/GlobalPlatformEditor";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Inicio from "./pages/Inicio";
@@ -49,9 +51,11 @@ const App = () => (
           <AuthProvider>
             <TenantProvider>
               <UserSettingsProvider>
-                <PWAUpdatePrompt />
-                <main id="main-content">
-                  <Routes>
+                <PlatformEditorProvider>
+                  <PWAUpdatePrompt />
+                  <GlobalPlatformEditor />
+                  <main id="main-content">
+                    <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Landing />} />
                   <Route path="/login" element={<Auth />} />
@@ -81,10 +85,11 @@ const App = () => (
                   <Route path="/app/platform-ui-manager" element={<PlatformUIManager />} />
                   <Route path="/app/platform-control" element={<PlatformControlCenter />} />
                   
-                  {/* Catch-all route */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                </main>
+                    {/* Catch-all route */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  </main>
+                </PlatformEditorProvider>
               </UserSettingsProvider>
             </TenantProvider>
           </AuthProvider>

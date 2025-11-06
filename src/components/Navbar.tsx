@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { MapPin, LogOut, Settings, Menu, Home, Globe, User, Sparkles, LayoutDashboard, Plus, Building2, Users, UserCheck, Archive, Layers } from 'lucide-react';
+import { MapPin, LogOut, Settings, Menu, Home, Globe, User, Sparkles, LayoutDashboard, Plus, Building2, Users, UserCheck, Archive, Layers, Paintbrush } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import TenantSwitcher from './TenantSwitcher';
+import { usePlatformEditor } from '@/contexts/PlatformEditorContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,7 @@ export const Navbar = () => {
   const { t } = useTranslation();
   const { isSuperAdmin } = useIsSuperAdmin();
   const { isTenantAdmin } = useTenant();
+  const { openEditor } = usePlatformEditor();
 
   return (
     <nav className="fixed top-0 w-full z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -126,6 +128,10 @@ export const Navbar = () => {
                           <Layers className="w-4 h-4 mr-2" />
                           Control de Plataforma
                         </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={openEditor} className="cursor-pointer">
+                        <Paintbrush className="w-4 h-4 mr-2" />
+                        Editor de Plataforma
                       </DropdownMenuItem>
                     </>
                   )}
