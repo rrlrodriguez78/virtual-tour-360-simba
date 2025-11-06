@@ -222,7 +222,7 @@ export default function TenantAdmin() {
     return (
       <div className="min-h-screen bg-background pt-16">
         <Navbar />
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto px-6 pt-24 pb-6">
           <Alert variant="destructive">
             <AlertTitle>No hay tenant seleccionado</AlertTitle>
             <AlertDescription>
@@ -238,7 +238,7 @@ export default function TenantAdmin() {
     return (
       <div className="min-h-screen bg-background pt-16">
         <Navbar />
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto px-6 pt-24 pb-6">
           <Alert variant="destructive">
             <AlertTitle>Sin permisos de administrador</AlertTitle>
             <AlertDescription>
@@ -254,7 +254,7 @@ export default function TenantAdmin() {
   return (
     <div className="min-h-screen bg-background pt-16">
       <Navbar />
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto px-6 pt-24 pb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">

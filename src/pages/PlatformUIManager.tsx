@@ -59,7 +59,7 @@ export default function PlatformUIManager() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 pt-24 pb-8">
           <Alert variant="destructive">
             <AlertDescription>
               Only super admins can access this page.
@@ -73,7 +73,7 @@ export default function PlatformUIManager() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 pt-24 pb-8 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">
             Platform UI Manager

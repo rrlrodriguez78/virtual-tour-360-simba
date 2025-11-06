@@ -118,7 +118,7 @@ export default function PlatformControlCenter() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto p-6 max-w-7xl">
+      <div className="container mx-auto px-6 pt-24 pb-6 max-w-7xl">
         {/* Header */}
         <div className="mb-8 space-y-4">
           <div className="flex items-center gap-3">

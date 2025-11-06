@@ -54,7 +54,7 @@ export default function SharedTour() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pt-16">
+      <div className="min-h-screen bg-background pt-24">
         <Navbar />
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <div className="text-center">
@@ -68,7 +68,7 @@ export default function SharedTour() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background pt-16">
+      <div className="min-h-screen bg-background pt-24">
         <Navbar />
         <div className="container mx-auto p-6 max-w-md mt-20">
           <Alert variant="destructive">

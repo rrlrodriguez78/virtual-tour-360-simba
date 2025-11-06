@@ -56,7 +56,7 @@ const BackupsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container mx-auto px-6 pt-24 pb-6 space-y-6">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
