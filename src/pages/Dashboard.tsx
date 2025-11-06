@@ -49,6 +49,7 @@ const Dashboard = () => {
   const [selectedTourForPassword, setSelectedTourForPassword] = useState<Tour | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedTourForShare, setSelectedTourForShare] = useState<{ id: string; title: string } | null>(null);
+  const [congratsDialogOpen, setCongratsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -268,10 +269,22 @@ const Dashboard = () => {
               </p>
             </div>
 
-            <Button size="lg" onClick={() => setTypeSelectorOpen(true)}>
-              <Plus className="w-5 h-5 mr-2" />
-              {t('dashboard.createNew')}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                size="lg" 
+                onClick={() => setCongratsDialogOpen(true)}
+                className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  ✨ Botón Fantasía
+                </span>
+              </Button>
+              
+              <Button size="lg" onClick={() => setTypeSelectorOpen(true)}>
+                <Plus className="w-5 h-5 mr-2" />
+                {t('dashboard.createNew')}
+              </Button>
+            </div>
           </div>
         </div>
         
@@ -541,6 +554,29 @@ const Dashboard = () => {
           tourTitle={selectedTourForShare.title}
         />
       )}
+
+      <AlertDialog open={congratsDialogOpen} onOpenChange={setCongratsDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+              🎉 ¡Felicidades! 🎉
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-lg pt-4">
+              Has descubierto el botón secreto de la fantasía.
+              <br />
+              <span className="text-2xl mt-4 block">✨🌟💫🎊</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex justify-center">
+            <AlertDialogAction 
+              onClick={() => setCongratsDialogOpen(false)}
+              className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white font-bold"
+            >
+              ¡Genial!
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
