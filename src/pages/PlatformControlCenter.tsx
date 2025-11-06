@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Settings, Monitor, Smartphone, GitBranch, Flag, Eye, 
-  Layout, Palette, Code, Database, CheckCircle2, InfoIcon 
+  Layout, Palette, Code, Database, CheckCircle2, InfoIcon, ArrowLeft 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
@@ -118,16 +118,28 @@ export default function PlatformControlCenter() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto p-6 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-            <Settings className="h-10 w-10" />
-            Centro de Control Multiplatforma
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Gestión centralizada del sistema de UI adaptativa para Web y Android
-          </p>
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="h-10 w-10"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-4xl font-bold flex items-center gap-3">
+                <Settings className="h-10 w-10" />
+                Centro de Control Multiplatforma
+              </h1>
+              <p className="text-muted-foreground text-lg mt-2">
+                Gestión centralizada del sistema de UI adaptativa para Web y Android
+              </p>
+            </div>
+          </div>
         </div>
 
         <Alert className="mb-8">
