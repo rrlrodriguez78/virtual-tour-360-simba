@@ -11,6 +11,7 @@ import { PlatformEditorProvider } from "./contexts/PlatformEditorContext";
 import { SplitViewProvider } from "./contexts/SplitViewContext";
 import { A11ySkipLink } from "./components/A11ySkipLink";
 import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
+import { PlatformPreviewSwitcher } from "./components/dev/PlatformPreviewSwitcher";
 import { GlobalPlatformEditor } from "./components/platform-manager/GlobalPlatformEditor";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -57,6 +58,7 @@ const App = () => (
                 <PlatformEditorProvider>
                   <SplitViewProvider>
                     <PWAUpdatePrompt />
+                    <PlatformPreviewSwitcher />
                     <GlobalPlatformEditor />
                     <main id="main-content">
                       <Routes>

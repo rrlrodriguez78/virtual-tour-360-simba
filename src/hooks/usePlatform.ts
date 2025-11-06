@@ -4,6 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Capacitor detection (will work when Capacitor is installed)
 const getCapacitorPlatform = (): 'web' | 'android' | 'ios' => {
+  // Check URL parameter first for development/preview
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const forcedPlatform = params.get('platform');
+    if (forcedPlatform === 'android' || forcedPlatform === 'ios' || forcedPlatform === 'web') {
+      return forcedPlatform as 'web' | 'android' | 'ios';
+    }
+  }
+  
   // @ts-ignore - Capacitor may not be installed yet
   if (typeof window !== 'undefined' && window.Capacitor) {
     // @ts-ignore
