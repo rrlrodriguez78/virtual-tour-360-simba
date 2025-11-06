@@ -7,8 +7,8 @@ interface PlatformEditorContextType {
   isEditorOpen: boolean;
   openEditor: () => void;
   closeEditor: () => void;
-  currentPlatform: 'web' | 'android';
-  setCurrentPlatform: (platform: 'web' | 'android') => void;
+  currentPlatform: 'web' | 'android' | 'both';
+  setCurrentPlatform: (platform: 'web' | 'android' | 'both') => void;
   currentPageName: string;
   setCurrentPageName: (name: string) => void;
   tempLayoutConfig: any;
@@ -45,7 +45,7 @@ const routeToPageNameMap: Record<string, string> = {
 
 export const PlatformEditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [currentPlatform, setCurrentPlatform] = useState<'web' | 'android'>('web');
+  const [currentPlatform, setCurrentPlatform] = useState<'web' | 'android' | 'both'>('web');
   const [currentPageName, setCurrentPageName] = useState<string>('');
   const [tempLayoutConfig, setTempLayoutConfig] = useState<any>({});
   const [tempFeatureFlags, setTempFeatureFlags] = useState<any>({});
@@ -68,8 +68,35 @@ export const PlatformEditorProvider: React.FC<{ children: React.ReactNode }> = (
     }
   }, [currentPageName, currentPlatform, isEditorOpen]);
 
-  const loadPageConfig = async (pageName: string, platform: 'web' | 'android') => {
+  const loadPageConfig = async (pageName: string, platform: 'web' | 'android' | 'both') => {
     try {
+      if (platform === 'both') {
+        // Load both configurations in parallel
+        const [webResult, androidResult] = await Promise.all([
+          supabase.from('platform_ui_config')
+            .select('*')
+            .eq('page_name', pageName)
+            .eq('platform', 'web')
+            .eq('is_active', true)
+            .maybeSingle(),
+          supabase.from('platform_ui_config')
+            .select('*')
+            .eq('page_name', pageName)
+            .eq('platform', 'android')
+            .eq('is_active', true)
+            .maybeSingle()
+        ]);
+
+        const webConfig = webResult.data?.layout_config || {};
+        const androidConfig = androidResult.data?.layout_config || {};
+        
+        // Use web config as base for both mode
+        setTempLayoutConfig(webConfig);
+        setOriginalConfig({ web: webResult.data, android: androidResult.data });
+        setTempFeatureFlags(webResult.data?.feature_flags || {});
+        return;
+      }
+
       const { data, error } = await supabase
         .from('platform_ui_config')
         .select('*')
@@ -117,6 +144,40 @@ export const PlatformEditorProvider: React.FC<{ children: React.ReactNode }> = (
   const saveChanges = async () => {
     setIsSaving(true);
     try {
+      if (currentPlatform === 'both') {
+        // Save to both platforms
+        const configData = {
+          layout_config: tempLayoutConfig,
+          feature_flags: tempFeatureFlags,
+          updated_at: new Date().toISOString(),
+        };
+
+        await Promise.all([
+          // Update/create web config
+          supabase.from('platform_ui_config')
+            .upsert({
+              page_name: currentPageName,
+              platform: 'web',
+              component_path: `src/pages/${currentPageName}.tsx`,
+              ...configData,
+              is_active: true,
+            }),
+          // Update/create android config
+          supabase.from('platform_ui_config')
+            .upsert({
+              page_name: currentPageName,
+              platform: 'android',
+              component_path: `src/pages/${currentPageName}.tsx`,
+              ...configData,
+              is_active: true,
+            })
+        ]);
+
+        toast.success('Configuración guardada para Web y Android');
+        await loadPageConfig(currentPageName, currentPlatform);
+        return;
+      }
+
       const configData = {
         page_name: currentPageName,
         platform: currentPlatform,

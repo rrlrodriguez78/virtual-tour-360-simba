@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Monitor, Smartphone, Eye, EyeOff } from 'lucide-react';
+import { Monitor, Smartphone, Eye, EyeOff, Layers } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,7 @@ interface LiveDualPreviewProps {
   pageName: string;
   layoutConfig: any;
   featureFlags: any;
-  currentPlatform: 'web' | 'android';
+  currentPlatform: 'web' | 'android' | 'both';
 }
 
 export const LiveDualPreview = ({ 
@@ -121,6 +121,74 @@ export const LiveDualPreview = ({
     );
   };
 
+  // When both mode is active, show both previews side by side
+  if (currentPlatform === 'both') {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium">Live Preview - Modo Ambos Sistemas</div>
+          <Badge variant="outline" className="gap-2 border-purple-500 text-purple-600">
+            <Layers className="w-3 h-3" />
+            Editando ambas plataformas
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {/* Web Preview */}
+          <Card className="border-2 border-blue-500 shadow-lg shadow-blue-500/20">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Monitor className="h-4 w-4 text-blue-500" />
+                  <CardTitle className="text-sm">Web 🔵</CardTitle>
+                </div>
+                <Badge variant="default" className="bg-blue-500">
+                  Editing
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px]">
+                <div className="border rounded-lg p-6 bg-background">
+                  {renderMockup('web', true)}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Android Preview */}
+          <Card className="border-2 border-green-500 shadow-lg shadow-green-500/20">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-green-500" />
+                  <CardTitle className="text-sm">Android 🟢</CardTitle>
+                </div>
+                <Badge variant="default" className="bg-green-500">
+                  Editing
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <ScrollArea className="h-[500px]">
+                <div className="border rounded-lg max-w-sm p-4 bg-background">
+                  {renderMockup('android', true)}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400 border border-purple-500 rounded-lg p-3 bg-purple-500/10">
+          <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+          <span>
+            Modo <strong>Ambos Sistemas</strong> activo - Los cambios se aplicarán simultáneamente a Web y Android
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Preview Controls */}
@@ -228,11 +296,19 @@ export const LiveDualPreview = ({
       </div>
 
       {/* Isolation Notice */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground border rounded-lg p-3 bg-muted/50">
-        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+      <div className={cn(
+        "flex items-center gap-2 text-xs border rounded-lg p-3",
+        currentPlatform === 'web' 
+          ? "text-blue-600 dark:text-blue-400 border-blue-500 bg-blue-500/10"
+          : "text-green-600 dark:text-green-400 border-green-500 bg-green-500/10"
+      )}>
+        <div className={cn(
+          "w-2 h-2 rounded-full animate-pulse",
+          currentPlatform === 'web' ? "bg-blue-500" : "bg-green-500"
+        )} />
         <span>
-          Cambios en <strong>{currentPlatform === 'web' ? 'Web' : 'Android'}</strong> no afectarán a{' '}
-          <strong>{currentPlatform === 'web' ? 'Android' : 'Web'}</strong> - Configuraciones aisladas
+          Cambios en <strong>{currentPlatform === 'web' ? 'Web 🔵' : 'Android 🟢'}</strong> no afectarán a{' '}
+          <strong>{currentPlatform === 'web' ? 'Android 🟢' : 'Web 🔵'}</strong> - Configuraciones aisladas
         </span>
       </div>
     </div>
