@@ -36,6 +36,7 @@ import BackupsPage from "./pages/BackupsPage";
 import AuthCallback from "./pages/AuthCallback";
 import PlatformUIManager from "./pages/PlatformUIManager";
 import PlatformControlCenter from "./pages/PlatformControlCenter";
+import SplitViewDev from "./pages/SplitViewDev";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,6 +85,7 @@ const App = () => (
                   <Route path="/app/backups" element={<BackupsPage />} />
                   <Route path="/app/platform-ui-manager" element={<PlatformUIManager />} />
                   <Route path="/app/platform-control" element={<PlatformControlCenter />} />
+                  <Route path="/dev/split-view" element={<SplitViewDev />} />
                   
                     {/* Catch-all route */}
                     <Route path="*" element={<NotFound />} />
