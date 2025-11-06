@@ -8,6 +8,7 @@ import { ThemeProvider } from "./components/contexts/ThemeContext";
 import { UserSettingsProvider } from "./contexts/UserSettingsContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { PlatformEditorProvider } from "./contexts/PlatformEditorContext";
+import { SplitViewProvider } from "./contexts/SplitViewContext";
 import { A11ySkipLink } from "./components/A11ySkipLink";
 import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
 import { GlobalPlatformEditor } from "./components/platform-manager/GlobalPlatformEditor";
@@ -53,10 +54,11 @@ const App = () => (
             <TenantProvider>
               <UserSettingsProvider>
                 <PlatformEditorProvider>
-                  <PWAUpdatePrompt />
-                  <GlobalPlatformEditor />
-                  <main id="main-content">
-                    <Routes>
+                  <SplitViewProvider>
+                    <PWAUpdatePrompt />
+                    <GlobalPlatformEditor />
+                    <main id="main-content">
+                      <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Landing />} />
                   <Route path="/login" element={<Auth />} />
@@ -87,10 +89,11 @@ const App = () => (
                   <Route path="/app/platform-control" element={<PlatformControlCenter />} />
                   <Route path="/dev/split-view" element={<SplitViewDev />} />
                   
-                    {/* Catch-all route */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  </main>
+                      {/* Catch-all route */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                    </main>
+                  </SplitViewProvider>
                 </PlatformEditorProvider>
               </UserSettingsProvider>
             </TenantProvider>
