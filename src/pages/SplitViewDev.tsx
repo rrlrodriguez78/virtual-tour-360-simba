@@ -105,7 +105,7 @@ export default function SplitViewDev() {
             </Badge>
           </div>
           <iframe
-            src={currentRoute}
+            src={`${currentRoute}${currentRoute.includes('?') ? '&' : '?'}iframe_preview=true`}
             className="w-full border-0"
             title="Vista Desktop"
             style={{ height: 'calc(100vh - 120px)' }}
@@ -135,7 +135,7 @@ export default function SplitViewDev() {
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-800 rounded-b-3xl z-10" />
               
               <iframe
-                src={currentRoute}
+                src={`${currentRoute}${currentRoute.includes('?') ? '&' : '?'}iframe_preview=true`}
                 className="w-full h-full border-0"
                 title="Vista Móvil"
                 style={{ colorScheme: 'normal' }}

@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
+import { useIsInIframePreview } from '@/hooks/useIsInIframePreview';
 import { AllTenantsStats } from '@/components/analytics/AllTenantsStats';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ export default function SuperAdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isSuperAdmin, loading: adminLoading } = useIsSuperAdmin();
+  const isInIframePreview = useIsInIframePreview();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTenantDialog, setShowTenantDialog] = useState(false);
@@ -58,10 +60,10 @@ export default function SuperAdminDashboard() {
   const [tenantForm, setTenantForm] = useState({ name: '', status: 'active', subscription_tier: 'free' });
 
   useEffect(() => {
-    if (!adminLoading && !isSuperAdmin && user) {
+    if (!adminLoading && !isSuperAdmin && user && !isInIframePreview) {
       navigate('/app/inicio');
     }
-  }, [isSuperAdmin, adminLoading, user, navigate]);
+  }, [isSuperAdmin, adminLoading, user, navigate, isInIframePreview]);
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -181,7 +183,7 @@ export default function SuperAdminDashboard() {
     return <div className="p-8">Cargando...</div>;
   }
 
-  if (!isSuperAdmin) {
+  if (!isSuperAdmin && !isInIframePreview) {
     return null;
   }
 

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
+import { useIsInIframePreview } from '@/hooks/useIsInIframePreview';
 import { usePlatformUIConfigs, useCreatePlatformUIConfig, useUpdatePlatformUIConfig } from '@/hooks/usePlatformUIManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 export default function PlatformControlCenter() {
   const navigate = useNavigate();
   const { isSuperAdmin, loading } = useIsSuperAdmin();
+  const isInIframePreview = useIsInIframePreview();
   const { data: configs } = usePlatformUIConfigs();
   const createConfig = useCreatePlatformUIConfig();
   const updateConfig = useUpdatePlatformUIConfig();
@@ -176,7 +178,7 @@ export default function PlatformControlCenter() {
     }
   ];
 
-  if (loading) {
+  if (loading && !isInIframePreview) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -184,7 +186,7 @@ export default function PlatformControlCenter() {
     );
   }
 
-  if (!isSuperAdmin) {
+  if (!isSuperAdmin && !isInIframePreview) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

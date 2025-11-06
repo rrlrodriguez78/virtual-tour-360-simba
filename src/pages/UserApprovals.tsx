@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
+import { useIsInIframePreview } from '@/hooks/useIsInIframePreview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,7 @@ export default function UserApprovals() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isSuperAdmin, loading: adminLoading } = useIsSuperAdmin();
+  const isInIframePreview = useIsInIframePreview();
   const [requests, setRequests] = useState<UserApprovalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pending');
@@ -52,10 +54,10 @@ export default function UserApprovals() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    if (!adminLoading && !isSuperAdmin && user) {
+    if (!adminLoading && !isSuperAdmin && user && !isInIframePreview) {
       navigate('/app/inicio');
     }
-  }, [isSuperAdmin, adminLoading, user, navigate]);
+  }, [isSuperAdmin, adminLoading, user, navigate, isInIframePreview]);
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -156,7 +158,7 @@ export default function UserApprovals() {
     return <div className="p-8">Cargando...</div>;
   }
 
-  if (!isSuperAdmin) {
+  if (!isSuperAdmin && !isInIframePreview) {
     return null;
   }
 

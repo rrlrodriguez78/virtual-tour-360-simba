@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsInIframePreview } from '@/hooks/useIsInIframePreview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,17 +51,18 @@ export default function TenantAdmin() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { currentTenant, isTenantAdmin, loading: tenantLoading } = useTenant();
+  const isInIframePreview = useIsInIframePreview();
   const [users, setUsers] = useState<TenantUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [userForm, setUserForm] = useState({ email: '', role: 'user' });
 
   useEffect(() => {
-    if (!tenantLoading && !isTenantAdmin && user) {
+    if (!tenantLoading && !isTenantAdmin && user && !isInIframePreview) {
       toast.error('No tienes permisos de administrador');
       navigate('/app/inicio');
     }
-  }, [isTenantAdmin, tenantLoading, user, navigate]);
+  }, [isTenantAdmin, tenantLoading, user, navigate, isInIframePreview]);
 
   useEffect(() => {
     if (currentTenant && isTenantAdmin) {
@@ -234,7 +236,7 @@ export default function TenantAdmin() {
     );
   }
 
-  if (!isTenantAdmin) {
+  if (!isTenantAdmin && !isInIframePreview) {
     return (
       <div className="min-h-screen bg-background pt-16">
         <Navbar />
