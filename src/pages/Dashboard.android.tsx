@@ -13,6 +13,7 @@ import ShareTourDialog from "@/components/share/ShareTourDialog";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from 'react-i18next';
 
 interface Tour {
   id: string;
@@ -29,6 +30,7 @@ export default function DashboardAndroid() {
   const { user } = useAuth();
   const { currentTenant } = useTenant();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,7 @@ export default function DashboardAndroid() {
   const [isSaving, setIsSaving] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedTourForShare, setSelectedTourForShare] = useState<Tour | null>(null);
+  const [congratsDialogOpen, setCongratsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -207,10 +210,20 @@ export default function DashboardAndroid() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">Mis Tours</h1>
-            <p className="text-xs text-muted-foreground">Versión Android</p>
+            <h1 className="text-xl font-bold">{t('dashboard.title')}</h1>
+            <p className="text-xs text-muted-foreground">Android</p>
           </div>
-          <Badge variant="secondary">{tours.length} tours</Badge>
+          <div className="flex gap-2 items-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCongratsDialogOpen(true)}
+              className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white border-0 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 px-3"
+            >
+              ✨
+            </Button>
+            <Badge variant="secondary">{tours.length} tours</Badge>
+          </div>
         </div>
       </div>
 
@@ -381,6 +394,29 @@ export default function DashboardAndroid() {
           tourTitle={selectedTourForShare.title}
         />
       )}
+
+      <AlertDialog open={congratsDialogOpen} onOpenChange={setCongratsDialogOpen}>
+        <AlertDialogContent className="max-w-md mx-4">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+              🎉 {t('dashboard.congratsTitle')} 🎉
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-base pt-4">
+              {t('dashboard.congratsDescription')}
+              <br />
+              <span className="text-xl mt-4 block">✨🌟💫🎊</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex justify-center">
+            <AlertDialogAction 
+              onClick={() => setCongratsDialogOpen(false)}
+              className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white font-bold"
+            >
+              {t('dashboard.congratsAction')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

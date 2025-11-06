@@ -109,7 +109,11 @@
     "clickCoverToView": "Cliquez sur la couverture pour voir la visite",
     "publishToView": "Publiez la visite pour la voir",
     "noAccess": "Aucun Accès à une Organisation",
-    "noAccessDescription": "Vous n'avez accès à aucune organisation. Veuillez contacter votre administrateur."
+    "noAccessDescription": "Vous n'avez accès à aucune organisation. Veuillez contacter votre administrateur.",
+    "fantasyButton": "Bouton Fantaisie",
+    "congratsTitle": "Félicitations!",
+    "congratsDescription": "Vous avez découvert le bouton secret de la fantaisie.",
+    "congratsAction": "Super!"
   },
   "editor": {
     "tour": "Visite",

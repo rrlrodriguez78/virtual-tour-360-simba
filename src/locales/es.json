@@ -110,7 +110,11 @@
     "clickCoverToView": "Haz clic en la portada para ver el tour",
     "publishToView": "Publica el tour para verlo",
     "noAccess": "Sin Acceso a Ninguna Organización",
-    "noAccessDescription": "No tienes acceso a ninguna organización. Por favor contacta a tu administrador."
+    "noAccessDescription": "No tienes acceso a ninguna organización. Por favor contacta a tu administrador.",
+    "fantasyButton": "Botón Fantasía",
+    "congratsTitle": "¡Felicidades!",
+    "congratsDescription": "Has descubierto el botón secreto de la fantasía.",
+    "congratsAction": "¡Genial!"
   },
   "editor": {
     "tour": "Tour",

@@ -276,7 +276,7 @@ const Dashboard = () => {
                 className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
                 <span className="relative z-10 flex items-center gap-2">
-                  ✨ Botón Fantasía
+                  ✨ {t('dashboard.fantasyButton')}
                 </span>
               </Button>
               
@@ -559,10 +559,10 @@ const Dashboard = () => {
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
-              🎉 ¡Felicidades! 🎉
+              🎉 {t('dashboard.congratsTitle')} 🎉
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-lg pt-4">
-              Has descubierto el botón secreto de la fantasía.
+              {t('dashboard.congratsDescription')}
               <br />
               <span className="text-2xl mt-4 block">✨🌟💫🎊</span>
             </AlertDialogDescription>
@@ -572,7 +572,7 @@ const Dashboard = () => {
               onClick={() => setCongratsDialogOpen(false)}
               className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white font-bold"
             >
-              ¡Genial!
+              {t('dashboard.congratsAction')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
