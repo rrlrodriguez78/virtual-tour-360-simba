@@ -5,18 +5,102 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Settings, Monitor, Smartphone, GitBranch, Flag, Eye, 
   Layout, Palette, Code, Database, CheckCircle2, InfoIcon, ArrowLeft 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
-import { usePlatformUIConfigs } from '@/hooks/usePlatformUIManagement';
+import { usePlatformUIConfigs, useCreatePlatformUIConfig, useUpdatePlatformUIConfig } from '@/hooks/usePlatformUIManagement';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export default function PlatformControlCenter() {
   const navigate = useNavigate();
   const { isSuperAdmin, loading } = useIsSuperAdmin();
   const { data: configs } = usePlatformUIConfigs();
+  const createConfig = useCreatePlatformUIConfig();
+  const updateConfig = useUpdatePlatformUIConfig();
+
+  // Fetch all pages
+  const { data: pages } = useQuery({
+    queryKey: ['pages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Helper function to check if a page is configured for a platform
+  const isPageConfiguredForPlatform = (pageName: string, platform: 'web' | 'android') => {
+    return configs?.some(
+      config => config.page_name === pageName && 
+                config.platform === platform && 
+                config.is_active
+    );
+  };
+
+  // Get the config for a page and platform
+  const getPageConfig = (pageName: string, platform: 'web' | 'android') => {
+    return configs?.find(
+      config => config.page_name === pageName && config.platform === platform
+    );
+  };
+
+  // Handle checkbox toggle
+  const handleTogglePageConfig = async (pageName: string, pageRoute: string, platform: 'web' | 'android', currentlyChecked: boolean) => {
+    try {
+      if (currentlyChecked) {
+        // Desactivar configuración existente
+        const existingConfig = getPageConfig(pageName, platform);
+        if (existingConfig) {
+          await updateConfig.mutateAsync({
+            id: existingConfig.id,
+            updates: { is_active: false }
+          });
+          toast.success(`Configuración desactivada para ${pageName} en ${platform}`);
+        }
+      } else {
+        // Crear o activar configuración
+        const existingConfig = getPageConfig(pageName, platform);
+        if (existingConfig) {
+          // Si existe pero está inactiva, activarla
+          await updateConfig.mutateAsync({
+            id: existingConfig.id,
+            updates: { is_active: true }
+          });
+          toast.success(`Configuración activada para ${pageName} en ${platform}`);
+        } else {
+          // Crear nueva configuración
+          const defaultComponentPath = platform === 'web' 
+            ? `src/pages/${pageName}.web.tsx`
+            : `src/pages/${pageName}.android.tsx`;
+          
+          await createConfig.mutateAsync({
+            page_name: pageName,
+            platform,
+            component_path: defaultComponentPath,
+            is_active: true,
+            layout_config: platform === 'web' 
+              ? { gridColumns: 3, spacing: 'default' }
+              : { layout: 'mobile', fab: true },
+            feature_flags: {}
+          });
+          toast.success(`Configuración creada para ${pageName} en ${platform}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling config:', error);
+      toast.error('Error al actualizar la configuración');
+    }
+  };
 
   const phases = [
     {
@@ -214,22 +298,105 @@ export default function PlatformControlCenter() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-4 border rounded-lg">
-                    <Monitor className="h-8 w-8 text-blue-500" />
-                    <div>
-                      <div className="font-semibold">Web Platform</div>
-                      <div className="text-sm text-muted-foreground">
-                        Desktop optimizado con grid 3 columnas
+                  {/* WEB PLATFORM */}
+                  <div className="border rounded-lg p-4 space-y-4">
+                    {/* Header Web Platform */}
+                    <div className="flex items-center gap-3">
+                      <Monitor className="h-8 w-8 text-blue-500" />
+                      <div>
+                        <div className="font-semibold">Web Platform</div>
+                        <div className="text-sm text-muted-foreground">
+                          Desktop optimizado con grid 3 columnas
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 border rounded-lg">
-                    <Smartphone className="h-8 w-8 text-green-500" />
-                    <div>
-                      <div className="font-semibold">Android Platform</div>
-                      <div className="text-sm text-muted-foreground">
-                        Móvil con gestos táctiles y FAB
+                    
+                    {/* Lista de páginas Web */}
+                    <div className="border-t pt-4">
+                      <div className="text-sm font-medium mb-3 flex items-center justify-between">
+                        <span>Páginas Configuradas</span>
+                        <Badge variant="secondary">
+                          {configs?.filter(c => c.platform === 'web' && c.is_active).length || 0}/{pages?.length || 0}
+                        </Badge>
                       </div>
+                      <ScrollArea className="h-[300px] pr-4">
+                        <div className="space-y-2">
+                          {pages?.map((page) => {
+                            const isChecked = isPageConfiguredForPlatform(page.name, 'web');
+                            return (
+                              <div 
+                                key={page.id} 
+                                className="flex items-start gap-2 p-2 hover:bg-muted/50 rounded cursor-pointer"
+                                onClick={() => handleTogglePageConfig(page.name, page.route, 'web', isChecked)}
+                              >
+                                <Checkbox
+                                  checked={isChecked}
+                                  className="mt-0.5"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTogglePageConfig(page.name, page.route, 'web', isChecked);
+                                  }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium truncate">{page.name}</div>
+                                  <div className="text-xs text-muted-foreground truncate">{page.route}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </div>
+
+                  {/* ANDROID PLATFORM */}
+                  <div className="border rounded-lg p-4 space-y-4">
+                    {/* Header Android Platform */}
+                    <div className="flex items-center gap-3">
+                      <Smartphone className="h-8 w-8 text-green-500" />
+                      <div>
+                        <div className="font-semibold">Android Platform</div>
+                        <div className="text-sm text-muted-foreground">
+                          Móvil con gestos táctiles y FAB
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Lista de páginas Android */}
+                    <div className="border-t pt-4">
+                      <div className="text-sm font-medium mb-3 flex items-center justify-between">
+                        <span>Páginas Configuradas</span>
+                        <Badge variant="secondary">
+                          {configs?.filter(c => c.platform === 'android' && c.is_active).length || 0}/{pages?.length || 0}
+                        </Badge>
+                      </div>
+                      <ScrollArea className="h-[300px] pr-4">
+                        <div className="space-y-2">
+                          {pages?.map((page) => {
+                            const isChecked = isPageConfiguredForPlatform(page.name, 'android');
+                            return (
+                              <div 
+                                key={page.id} 
+                                className="flex items-start gap-2 p-2 hover:bg-muted/50 rounded cursor-pointer"
+                                onClick={() => handleTogglePageConfig(page.name, page.route, 'android', isChecked)}
+                              >
+                                <Checkbox
+                                  checked={isChecked}
+                                  className="mt-0.5"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTogglePageConfig(page.name, page.route, 'android', isChecked);
+                                  }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium truncate">{page.name}</div>
+                                  <div className="text-xs text-muted-foreground truncate">{page.route}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
                     </div>
                   </div>
                 </div>
