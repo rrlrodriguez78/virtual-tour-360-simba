@@ -32,7 +32,6 @@ export function PlatformRoute({
     if (config && config.component_path && config.component_path !== '') {
       try {
         // Dynamic import based on component_path from database
-        // Note: This requires the component to exist in the expected location
         const DynamicComponent = lazy(() => import(`../${config.component_path}`));
         return DynamicComponent;
       } catch (error) {
@@ -40,7 +39,50 @@ export function PlatformRoute({
       }
     }
 
-    // Otherwise, use the provided platform-specific components
+    // Try to load platform-specific variant automatically
+    // Example: pages/Dashboard.tsx -> pages/Dashboard.web.tsx or pages/Dashboard.android.tsx
+    if (webComponent || androidComponent || iosComponent) {
+      try {
+        // Extract the base path from provided components
+        const basePath = extractedPageName;
+        
+        // Try to load platform-specific variant
+        switch (platform) {
+          case 'android':
+            if (androidComponent) return androidComponent;
+            // Try to load .android.tsx variant
+            try {
+              const AndroidVariant = lazy(() => import(`../pages/${basePath}.android.tsx`).catch(() => import(`../pages/${basePath}.tsx`)));
+              return AndroidVariant;
+            } catch {
+              return fallback || webComponent || null;
+            }
+          case 'ios':
+            if (iosComponent) return iosComponent;
+            // Try to load .ios.tsx variant
+            try {
+              const IOSVariant = lazy(() => import(`../pages/${basePath}.ios.tsx`).catch(() => import(`../pages/${basePath}.tsx`)));
+              return IOSVariant;
+            } catch {
+              return fallback || webComponent || null;
+            }
+          case 'web':
+          default:
+            if (webComponent) return webComponent;
+            // Try to load .web.tsx variant
+            try {
+              const WebVariant = lazy(() => import(`../pages/${basePath}.web.tsx`).catch(() => import(`../pages/${basePath}.tsx`)));
+              return WebVariant;
+            } catch {
+              return fallback || null;
+            }
+        }
+      } catch (error) {
+        console.error(`Failed to load platform variant for: ${extractedPageName}`, error);
+      }
+    }
+
+    // Final fallback: use provided platform-specific components
     switch (platform) {
       case 'android':
         return androidComponent || fallback || webComponent || null;
