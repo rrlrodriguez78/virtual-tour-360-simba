@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Monitor, Smartphone, Globe, Settings, Trash2, Plus } from 'lucide-react';
+import { Monitor, Smartphone, Globe, Settings, Trash2, Plus, History } from 'lucide-react';
 import { PlatformUIConfig, useUpdatePlatformUIConfig, useDeletePlatformUIConfig } from '@/hooks/usePlatformUIManagement';
 import {
   AlertDialog,

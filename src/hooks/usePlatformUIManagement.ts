@@ -126,3 +126,66 @@ export function useDeletePlatformUIConfig() {
     },
   });
 }
+
+// Rollback to a specific version
+export function useRollbackVersion() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, rollbackToVersion }: { id: string; rollbackToVersion: number }) => {
+      // Get the config we want to rollback to
+      const { data: oldConfig, error: fetchError } = await supabase
+        .from('platform_ui_config')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Get current max version for this page/platform
+      const { data: currentConfigs } = await supabase
+        .from('platform_ui_config')
+        .select('version')
+        .eq('page_name', oldConfig.page_name)
+        .eq('platform', oldConfig.platform)
+        .order('version', { ascending: false })
+        .limit(1);
+
+      const nextVersion = (currentConfigs?.[0]?.version || 0) + 1;
+
+      // Create new config with old settings but new version
+      const { data, error } = await supabase
+        .from('platform_ui_config')
+        .insert([{
+          page_name: oldConfig.page_name,
+          platform: oldConfig.platform,
+          component_path: oldConfig.component_path,
+          layout_config: oldConfig.layout_config,
+          feature_flags: oldConfig.feature_flags,
+          version: nextVersion,
+          is_active: true,
+          created_by: oldConfig.created_by
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['platform-ui-configs'] });
+      toast({
+        title: 'Rollback exitoso',
+        description: 'Se ha restaurado la versión anterior.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo hacer rollback',
+        variant: 'destructive',
+      });
+    },
+  });
+}

@@ -1,21 +1,50 @@
 import { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InfoIcon, Monitor, Smartphone, GitCompare } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { InfoIcon, Settings, Plus, GitCompare, GitBranch } from 'lucide-react';
 import { PlatformConfigList } from '@/components/platform-manager/PlatformConfigList';
 import { PlatformConfigEditor } from '@/components/platform-manager/PlatformConfigEditor';
 import { PlatformComparison } from '@/components/platform-manager/PlatformComparison';
-import { usePlatformUIConfigs, PlatformUIConfig } from '@/hooks/usePlatformUIManagement';
+import { VersionHistory } from '@/components/platform-manager/VersionHistory';
+import { VersionComparison } from '@/components/platform-manager/VersionComparison';
+import { usePlatformUIConfigs, PlatformUIConfig, useRollbackVersion } from '@/hooks/usePlatformUIManagement';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
 
 export default function PlatformUIManager() {
   const { data: configs, isLoading, refetch } = usePlatformUIConfigs();
   const { isSuperAdmin, loading: isLoadingAdmin } = useIsSuperAdmin();
+  const rollbackMutation = useRollbackVersion();
   const [editingConfig, setEditingConfig] = useState<PlatformUIConfig | null>(null);
+  const [comparisonVersions, setComparisonVersions] = useState<{ v1: PlatformUIConfig; v2: PlatformUIConfig } | null>(null);
 
   const handleEdit = (config: PlatformUIConfig) => {
     setEditingConfig(config);
+  };
+
+  const handleRollback = async (pageName: string, version: number) => {
+    const configToRollback = configs?.find(
+      c => c.page_name === pageName && c.version === version
+    );
+    
+    if (configToRollback) {
+      await rollbackMutation.mutateAsync({
+        id: configToRollback.id,
+        rollbackToVersion: version
+      });
+      refetch();
+    }
+  };
+
+  const handleCompare = (pageName: string, v1: number, v2: number) => {
+    const version1 = configs?.find(c => c.page_name === pageName && c.version === v1);
+    const version2 = configs?.find(c => c.page_name === pageName && c.version === v2);
+    
+    if (version1 && version2) {
+      setComparisonVersions({ v1: version1, v2: version2 });
+    }
   };
 
   if (isLoadingAdmin) {
@@ -57,23 +86,27 @@ export default function PlatformUIManager() {
         <Alert className="mb-6">
           <InfoIcon className="h-4 w-4" />
           <AlertDescription>
-            <strong>Phase 4 Active:</strong> Visual editors, feature flag toggles, live preview, and platform comparison now available.
+            <strong>Phase 5 Active:</strong> Version management, rollback, comparison, and advanced feature flags now available.
           </AlertDescription>
         </Alert>
 
         <Tabs defaultValue="list" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="list">
-              <Monitor className="h-4 w-4 mr-2" />
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="list" className="gap-2">
+              <Settings className="h-4 w-4" />
               Configurations
             </TabsTrigger>
-            <TabsTrigger value="create">
-              <Smartphone className="h-4 w-4 mr-2" />
+            <TabsTrigger value="create" className="gap-2">
+              <Plus className="h-4 w-4" />
               Create New
             </TabsTrigger>
-            <TabsTrigger value="compare">
-              <GitCompare className="h-4 w-4 mr-2" />
+            <TabsTrigger value="compare" className="gap-2">
+              <GitCompare className="h-4 w-4" />
               Compare
+            </TabsTrigger>
+            <TabsTrigger value="versions" className="gap-2">
+              <GitBranch className="h-4 w-4" />
+              Versions
             </TabsTrigger>
           </TabsList>
 
@@ -122,8 +155,46 @@ export default function PlatformUIManager() {
               ))}
             </div>
           </TabsContent>
+
+          <TabsContent value="versions" className="space-y-6">
+            {Array.from(new Set(configs?.map(c => c.page_name))).map(pageName => {
+              const pageConfigs = configs?.filter(c => c.page_name === pageName) || [];
+              const currentVersion = pageConfigs.find(c => c.is_active)?.version;
+              
+              return (
+                <Card key={pageName}>
+                  <CardHeader>
+                    <CardTitle>{pageName} - Version History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <VersionHistory
+                      configs={pageConfigs}
+                      currentVersion={currentVersion}
+                      onRollback={(version) => handleRollback(pageName, version)}
+                      onCompare={(v1, v2) => handleCompare(pageName, v1, v2)}
+                    />
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Version Comparison Dialog */}
+      {comparisonVersions && (
+        <Dialog open={!!comparisonVersions} onOpenChange={() => setComparisonVersions(null)}>
+          <DialogContent className="max-w-6xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Version Comparison</DialogTitle>
+            </DialogHeader>
+            <VersionComparison
+              version1={comparisonVersions.v1}
+              version2={comparisonVersions.v2}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
