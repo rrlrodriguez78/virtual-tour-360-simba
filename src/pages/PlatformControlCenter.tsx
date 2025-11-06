@@ -125,7 +125,7 @@ export default function PlatformControlCenter() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/app/tours')}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
