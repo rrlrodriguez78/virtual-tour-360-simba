@@ -120,26 +120,23 @@ export default function PlatformControlCenter() {
       <Navbar />
       <div className="container mx-auto p-6 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
+        <div className="mb-8 space-y-4">
+          <div className="flex items-center gap-3">
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               onClick={() => navigate(-1)}
-              className="h-10 w-10"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-4xl font-bold flex items-center gap-3">
-                <Settings className="h-10 w-10" />
-                Centro de Control Multiplatforma
-              </h1>
-              <p className="text-muted-foreground text-lg mt-2">
-                Gestión centralizada del sistema de UI adaptativa para Web y Android
-              </p>
-            </div>
+            <h1 className="text-4xl font-bold flex items-center gap-3">
+              <Settings className="h-10 w-10" />
+              Centro de Control Multiplatforma
+            </h1>
           </div>
+          <p className="text-muted-foreground text-lg pl-[52px]">
+            Gestión centralizada del sistema de UI adaptativa para Web y Android
+          </p>
         </div>
 
         <Alert className="mb-8">
