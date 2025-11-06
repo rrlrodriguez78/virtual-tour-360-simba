@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface SplitViewContextType {
   isWindowOpen: boolean;
@@ -11,6 +11,7 @@ const SplitViewContext = createContext<SplitViewContextType | undefined>(undefin
 
 export const SplitViewProvider = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isWindowOpen, setIsWindowOpen] = useState(false);
   const windowRef = useRef<Window | null>(null);
 
@@ -75,7 +76,7 @@ export const SplitViewProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [location, isWindowOpen]);
 
-  // Responder a solicitudes de ruta actual desde Split View
+  // Responder a solicitudes de ruta actual y navegación desde Split View
   useEffect(() => {
     const channel = new BroadcastChannel('split-view-sync');
     
@@ -86,11 +87,14 @@ export const SplitViewProvider = ({ children }: { children: ReactNode }) => {
           type: 'CURRENT_ROUTE_RESPONSE',
           route: currentRoute
         });
+      } else if (event.data.type === 'NAVIGATE_FROM_SPLIT_VIEW') {
+        // Navegar en ventana principal cuando Split View navega
+        navigate(event.data.route);
       }
     };
 
     return () => channel.close();
-  }, [location]);
+  }, [location, navigate]);
 
   // Cleanup SOLO cuando la aplicación completa se cierra (unmount del provider)
   useEffect(() => {

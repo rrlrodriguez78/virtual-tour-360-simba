@@ -70,6 +70,67 @@ export default function SplitViewDev() {
     channel.close();
   };
 
+  // Detectar navegación en iframes y sincronizar con ventana principal
+  useEffect(() => {
+    const desktopIframe = document.querySelector('iframe[title="Vista Desktop"]') as HTMLIFrameElement;
+    const mobileIframe = document.querySelector('iframe[title="Vista Móvil"]') as HTMLIFrameElement;
+
+    const checkIframeNavigation = (iframe: HTMLIFrameElement | null) => {
+      if (!iframe) return;
+
+      try {
+        // Intentar acceder a la ubicación del iframe (solo funciona en mismo origen)
+        const iframeWindow = iframe.contentWindow;
+        if (!iframeWindow) return;
+
+        // Detectar cambios en la URL del iframe
+        const checkUrl = () => {
+          try {
+            const iframeLocation = iframeWindow.location;
+            const iframePath = iframeLocation.pathname + iframeLocation.search;
+            
+            // Remover el parámetro iframe_preview de la comparación
+            const cleanPath = iframePath.replace(/[?&]iframe_preview=true/, '');
+            const cleanCurrentRoute = currentRoute.replace(/[?&]iframe_preview=true/, '');
+            
+            if (cleanPath !== cleanCurrentRoute) {
+              setCurrentRoute(cleanPath);
+              
+              // Notificar a ventana principal
+              const channel = new BroadcastChannel('split-view-sync');
+              channel.postMessage({
+                type: 'NAVIGATE_FROM_SPLIT_VIEW',
+                route: cleanPath
+              });
+              channel.close();
+            }
+          } catch (e) {
+            // Ignorar errores de CORS
+          }
+        };
+
+        // Verificar cada 500ms si cambió la URL
+        const interval = setInterval(checkUrl, 500);
+        return () => clearInterval(interval);
+      } catch (e) {
+        // Ignorar errores de acceso
+      }
+    };
+
+    // Esperar a que los iframes se carguen
+    const timeout = setTimeout(() => {
+      const cleanup1 = checkIframeNavigation(desktopIframe);
+      const cleanup2 = checkIframeNavigation(mobileIframe);
+      
+      return () => {
+        cleanup1?.();
+        cleanup2?.();
+      };
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [currentRoute]);
+
   // Persistir cambios de ancho móvil
   useEffect(() => {
     localStorage.setItem('splitViewMobileWidth', mobileWidth.toString());
