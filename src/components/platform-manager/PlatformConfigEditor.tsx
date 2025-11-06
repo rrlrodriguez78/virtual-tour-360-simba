@@ -1,213 +1,226 @@
-import { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, X, Code2, Palette, ToggleLeft } from 'lucide-react';
-import { PlatformUIConfig, useCreatePlatformUIConfig, useUpdatePlatformUIConfig } from '@/hooks/usePlatformUIManagement';
+import { useCreatePlatformUIConfig, useUpdatePlatformUIConfig } from '@/hooks/usePlatformUIManagement';
+import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
+import { LayoutVisualEditor } from './LayoutVisualEditor';
+import { FeatureFlagsEditor } from './FeatureFlagsEditor';
+import { PlatformPreview } from './PlatformPreview';
+
+type PlatformUIConfig = Database['public']['Tables']['platform_ui_config']['Row'];
 
 interface PlatformConfigEditorProps {
   config?: PlatformUIConfig;
-  onClose: () => void;
+  onSave?: () => void;
+  onCancel?: () => void;
 }
 
-export function PlatformConfigEditor({ config, onClose }: PlatformConfigEditorProps) {
-  const createConfig = useCreatePlatformUIConfig();
-  const updateConfig = useUpdatePlatformUIConfig();
+export const PlatformConfigEditor = ({ config, onSave, onCancel }: PlatformConfigEditorProps) => {
+  const createMutation = useCreatePlatformUIConfig();
+  const updateMutation = useUpdatePlatformUIConfig();
+  const isEditing = !!config;
 
-  const [formData, setFormData] = useState<{
-    page_name: string;
-    platform: 'web' | 'android' | 'both';
-    is_active: boolean;
-    component_path: string;
-    layout_config: string;
-    feature_flags: string;
-  }>({
+  const [formData, setFormData] = useState({
     page_name: config?.page_name || '',
-    platform: config?.platform || 'web',
-    is_active: config?.is_active ?? true,
+    platform: config?.platform || ('web' as 'web' | 'android' | 'ios' | 'both'),
     component_path: config?.component_path || '',
-    layout_config: JSON.stringify(config?.layout_config || {}, null, 2),
-    feature_flags: JSON.stringify(config?.feature_flags || {}, null, 2),
+    is_active: config?.is_active ?? true,
+    layout_config: config?.layout_config || {},
+    feature_flags: config?.feature_flags || {},
   });
 
-  const isEdit = !!config;
+  const [layoutConfigText, setLayoutConfigText] = useState(
+    JSON.stringify(config?.layout_config || {}, null, 2)
+  );
+  const [featureFlagsText, setFeatureFlagsText] = useState(
+    JSON.stringify(config?.feature_flags || {}, null, 2)
+  );
 
-  const handleSave = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     try {
-      const layoutConfig = JSON.parse(formData.layout_config);
-      const featureFlags = JSON.parse(formData.feature_flags);
+      // Parse JSON from text areas if in JSON tab
+      let layoutConfig = formData.layout_config;
+      let featureFlags = formData.feature_flags;
 
-      if (!['web', 'android', 'both'].includes(formData.platform)) {
-        throw new Error('Plataforma inválida');
+      try {
+        const parsedLayout = JSON.parse(layoutConfigText);
+        const parsedFlags = JSON.parse(featureFlagsText);
+        layoutConfig = parsedLayout;
+        featureFlags = parsedFlags;
+      } catch (parseError) {
+        // Use the visual editor values if JSON parsing fails
       }
 
       const data = {
         page_name: formData.page_name,
         platform: formData.platform as 'web' | 'android' | 'both',
+        component_path: formData.component_path || null,
         is_active: formData.is_active,
-        component_path: formData.component_path,
-        layout_config: layoutConfig,
-        feature_flags: featureFlags,
+        layout_config: layoutConfig as any,
+        feature_flags: featureFlags as any,
       };
 
-      if (isEdit) {
-        await updateConfig.mutateAsync({
+      if (isEditing && config) {
+        await updateMutation.mutateAsync({
           id: config.id,
-          updates: data,
+          updates: data as any,
         });
+        toast.success('Configuration updated successfully');
       } else {
-        await createConfig.mutateAsync(data);
+        await createMutation.mutateAsync(data as any);
+        toast.success('Configuration created successfully');
       }
 
-      onClose();
+      if (onSave) onSave();
     } catch (error) {
-      console.error('Error al guardar:', error);
+      console.error('Error saving config:', error);
+      toast.error('Failed to save configuration');
     }
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">
-            {isEdit ? 'Editar' : 'Nueva'} Configuración
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            {isEdit ? 'Modifica la configuración existente' : 'Crea una nueva configuración de plataforma'}
-          </p>
-        </div>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>{isEditing ? 'Edit' : 'Create'} Platform Configuration</CardTitle>
+          <CardDescription>
+            Configure UI settings for specific platforms with visual editor
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="page_name">Page Name</Label>
+                <Input
+                  id="page_name"
+                  value={formData.page_name}
+                  onChange={(e) => setFormData({ ...formData, page_name: e.target.value })}
+                  placeholder="Dashboard"
+                  required
+                />
+              </div>
 
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="page_name">Nombre de Página</Label>
-            <Input
-              id="page_name"
-              placeholder="Dashboard, Viewer, Editor..."
-              value={formData.page_name}
-              onChange={(e) => setFormData({ ...formData, page_name: e.target.value })}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="platform">Platform</Label>
+                <Select
+                  value={formData.platform}
+                  onValueChange={(value) => setFormData({ ...formData, platform: value as 'web' | 'android' | 'ios' | 'both' })}
+                >
+                  <SelectTrigger id="platform">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="web">Web</SelectItem>
+                    <SelectItem value="android">Android</SelectItem>
+                    <SelectItem value="ios">iOS</SelectItem>
+                    <SelectItem value="both">Both (Mobile)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="platform">Plataforma</Label>
-            <Select
-              value={formData.platform}
-              onValueChange={(value: 'web' | 'android' | 'both') => setFormData({ ...formData, platform: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="web">Web</SelectItem>
-                <SelectItem value="android">Android</SelectItem>
-                <SelectItem value="both">Ambas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="component_path">Ruta del Componente (opcional)</Label>
-          <Input
-            id="component_path"
-            placeholder="pages/Dashboard.android.tsx"
-            value={formData.component_path}
-            onChange={(e) => setFormData({ ...formData, component_path: e.target.value })}
-          />
-          <p className="text-sm text-muted-foreground">
-            Deja vacío para usar el componente por defecto
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <div>
-            <Label htmlFor="is_active">Estado Activo</Label>
-            <p className="text-sm text-muted-foreground">
-              Activa o desactiva esta configuración
-            </p>
-          </div>
-          <Switch
-            id="is_active"
-            checked={formData.is_active}
-            onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-          />
-        </div>
-
-        <Tabs defaultValue="layout" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="layout" className="gap-2">
-              <Palette className="h-4 w-4" />
-              Layout Config
-            </TabsTrigger>
-            <TabsTrigger value="features" className="gap-2">
-              <ToggleLeft className="h-4 w-4" />
-              Feature Flags
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="layout" className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="layout_config">Configuración de Layout (JSON)</Label>
-              <Textarea
-                id="layout_config"
-                placeholder='{\n  "web": {\n    "container": "max-w-7xl",\n    "grid": "grid-cols-3"\n  },\n  "android": {\n    "container": "px-2",\n    "grid": "grid-cols-1"\n  }\n}'
-                value={formData.layout_config}
-                onChange={(e) => setFormData({ ...formData, layout_config: e.target.value })}
-                className="font-mono text-sm min-h-[200px]"
+              <Label htmlFor="component_path">Component Path</Label>
+              <Input
+                id="component_path"
+                value={formData.component_path}
+                onChange={(e) => setFormData({ ...formData, component_path: e.target.value })}
+                placeholder="pages/Dashboard"
               />
-              <p className="text-sm text-muted-foreground">
-                Define clases de Tailwind específicas por plataforma
+              <p className="text-xs text-muted-foreground">
+                Optional: Relative path without extension (e.g., "pages/Dashboard")
               </p>
             </div>
-          </TabsContent>
 
-          <TabsContent value="features" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="feature_flags">Feature Flags (JSON)</Label>
-              <Textarea
-                id="feature_flags"
-                placeholder='{\n  "web": {\n    "bulkActions": true,\n    "advancedFilters": true\n  },\n  "android": {\n    "swipeGestures": true,\n    "quickActions": true\n  }\n}'
-                value={formData.feature_flags}
-                onChange={(e) => setFormData({ ...formData, feature_flags: e.target.value })}
-                className="font-mono text-sm min-h-[200px]"
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_active"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
               />
-              <p className="text-sm text-muted-foreground">
-                Define funcionalidades específicas por plataforma
-              </p>
+              <Label htmlFor="is_active">Active Configuration</Label>
             </div>
-          </TabsContent>
-        </Tabs>
 
-        <div className="flex items-center gap-3 pt-4 border-t">
-          <Button
-            onClick={handleSave}
-            disabled={createConfig.isPending || updateConfig.isPending}
-            className="gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {isEdit ? 'Guardar Cambios' : 'Crear Configuración'}
-          </Button>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-        </div>
-      </div>
-    </Card>
+            <Tabs defaultValue="visual" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="visual">Visual Editor</TabsTrigger>
+                <TabsTrigger value="flags">Feature Flags</TabsTrigger>
+                <TabsTrigger value="json">JSON (Advanced)</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="visual" className="mt-4">
+                <LayoutVisualEditor
+                  value={(formData.layout_config as any) || {}}
+                  onChange={(config) => {
+                    setFormData({ ...formData, layout_config: config as any });
+                    setLayoutConfigText(JSON.stringify(config, null, 2));
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="flags" className="mt-4">
+                <FeatureFlagsEditor
+                  value={(formData.feature_flags as any) || {}}
+                  onChange={(flags) => {
+                    setFormData({ ...formData, feature_flags: flags as any });
+                    setFeatureFlagsText(JSON.stringify(flags, null, 2));
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="json" className="mt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="layout_config">Layout Configuration (JSON)</Label>
+                  <textarea
+                    id="layout_config"
+                    value={layoutConfigText}
+                    onChange={(e) => setLayoutConfigText(e.target.value)}
+                    placeholder='{ "columns": 3, "gap": "md" }'
+                    className="w-full font-mono text-sm min-h-[150px] p-2 border rounded-md"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="feature_flags">Feature Flags (JSON)</Label>
+                  <textarea
+                    id="feature_flags"
+                    value={featureFlagsText}
+                    onChange={(e) => setFeatureFlagsText(e.target.value)}
+                    placeholder='{ "showAnalytics": true }'
+                    className="w-full font-mono text-sm min-h-[150px] p-2 border rounded-md"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex gap-2">
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : 'Save Configuration'}
+              </Button>
+              {onCancel && (
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <PlatformPreview
+        pageName={formData.page_name}
+        layoutConfig={formData.layout_config}
+        featureFlags={formData.feature_flags}
+      />
+    </div>
   );
-}
+};
