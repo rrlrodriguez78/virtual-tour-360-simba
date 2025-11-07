@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Users, UserPlus, Trash2, Mail, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
+import { WorkflowGuide } from '@/components/admin/WorkflowGuide';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
@@ -74,28 +75,28 @@ export default function TenantAdmin() {
     if (!currentTenant) return;
 
     try {
+      // Optimized query with direct profile join
       const { data: tenantUsers, error } = await supabase
         .from('tenant_users' as any)
-        .select('*')
-        .eq('tenant_id', currentTenant.tenant_id);
+        .select(`
+          *,
+          profiles!tenant_users_user_id_fkey (
+            email,
+            full_name,
+            account_status
+          )
+        `)
+        .eq('tenant_id', currentTenant.tenant_id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Load user profiles
-      const userIds = (tenantUsers || []).map((tu: any) => tu.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', userIds);
-
-      const usersWithProfiles = (tenantUsers || []).map((tu: any) => {
-        const profile = profiles?.find((p: any) => p.id === tu.user_id);
-        return {
-          ...tu,
-          email: profile?.email,
-          full_name: profile?.full_name,
-        };
-      }) as TenantUser[];
+      // Map profiles from joined data
+      const usersWithProfiles = (tenantUsers || []).map((tu: any) => ({
+        ...tu,
+        email: tu.profiles?.email,
+        full_name: tu.profiles?.full_name,
+      })) as TenantUser[];
 
       setUsers(usersWithProfiles);
     } catch (error) {
@@ -283,6 +284,8 @@ export default function TenantAdmin() {
             </Button>
           </div>
         </div>
+
+        <WorkflowGuide variant="tenant-admin" />
 
         <Card>
           <CardHeader>

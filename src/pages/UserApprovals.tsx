@@ -7,10 +7,12 @@ import { useIsInIframePreview } from '@/hooks/useIsInIframePreview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserCheck, UserX, Clock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
+import { WorkflowGuide } from '@/components/admin/WorkflowGuide';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,16 +69,19 @@ export default function UserApprovals() {
 
   const loadRequests = async () => {
     try {
+      // Optimized query with better indexing hint
       const { data, error } = await supabase
         .from('user_approval_requests')
         .select(`
           *,
           profiles!user_approval_requests_user_id_fkey (
             email,
-            full_name
+            full_name,
+            account_status
           )
         `)
-        .order('requested_at', { ascending: false });
+        .order('requested_at', { ascending: false })
+        .limit(100); // Limit results for performance
 
       if (error) throw error;
 
@@ -186,6 +191,8 @@ export default function UserApprovals() {
           </div>
         </div>
 
+        <WorkflowGuide variant="approval" />
+
         {/* Statistics */}
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           <Card>
@@ -235,7 +242,10 @@ export default function UserApprovals() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No hay solicitudes pendientes</p>
+                  <p className="text-lg font-medium mb-2">No hay solicitudes pendientes</p>
+                  <p className="text-sm text-muted-foreground">
+                    Cuando un usuario se registre, aparecerá aquí para que puedas aprobarlo.
+                  </p>
                 </CardContent>
               </Card>
             ) : (
@@ -244,19 +254,21 @@ export default function UserApprovals() {
                   <Card key={request.id}>
                     <CardHeader>
                       <div className="flex items-start justify-between">
-                        <div className="space-y-1">
+                         <div className="space-y-1">
                           <CardTitle className="text-xl">
                             {request.full_name || 'Sin nombre'}
                           </CardTitle>
-                          <CardDescription>{request.email}</CardDescription>
+                          <CardDescription className="flex items-center gap-2">
+                            {request.email}
+                          </CardDescription>
                           <p className="text-sm text-muted-foreground">
-                            Solicitado: {new Date(request.requested_at).toLocaleString('es-ES')}
+                            Solicitado hace {Math.floor((Date.now() - new Date(request.requested_at).getTime()) / (1000 * 60 * 60 * 24))} días
+                            <span className="text-xs ml-2">
+                              ({new Date(request.requested_at).toLocaleString('es-ES')})
+                            </span>
                           </p>
                         </div>
-                        <Badge variant="secondary">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Pendiente
-                        </Badge>
+                        <StatusBadge status="pending" />
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -311,10 +323,7 @@ export default function UserApprovals() {
                             </p>
                           )}
                         </div>
-                        <Badge className="bg-green-600">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Aprobado
-                        </Badge>
+                        <StatusBadge status="approved" />
                       </div>
                     </CardHeader>
                   </Card>
@@ -350,10 +359,7 @@ export default function UserApprovals() {
                             </p>
                           )}
                         </div>
-                        <Badge variant="destructive">
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Rechazado
-                        </Badge>
+                        <StatusBadge status="rejected" />
                       </div>
                     </CardHeader>
                   </Card>

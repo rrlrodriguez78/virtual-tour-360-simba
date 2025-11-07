@@ -10,10 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Users, Trash2, Edit, Plus, Flag, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
+import { WorkflowGuide } from '@/components/admin/WorkflowGuide';
 import {
   Dialog,
   DialogContent,
@@ -73,9 +75,13 @@ export default function SuperAdminDashboard() {
 
   const loadTenants = async () => {
     try {
+      // Optimized query with tenant user counts
       const { data, error } = await supabase
         .from('tenants' as any)
-        .select('*')
+        .select(`
+          *,
+          tenant_users(count)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -206,7 +212,9 @@ export default function SuperAdminDashboard() {
                 <Building2 className="h-8 w-8" />
                 Super Admin Dashboard
               </h1>
-              <p className="text-muted-foreground mt-2">Gestiona todos los tenants del sistema</p>
+              <p className="text-muted-foreground mt-2">
+                Gestiona todos los tenants del sistema • {tenants.length} organizaciones
+              </p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => navigate('/app/feature-management')}>
@@ -220,6 +228,8 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
         </div>
+
+        <WorkflowGuide variant="super-admin" />
 
         {/* System Statistics */}
         <AllTenantsStats />
@@ -235,16 +245,14 @@ export default function SuperAdminDashboard() {
               {tenants.map((tenant) => (
                 <Card key={tenant.id}>
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between">
                       <div>
                         <CardTitle>{tenant.name}</CardTitle>
                         <CardDescription className="mt-1">
                           Creado: {new Date(tenant.created_at).toLocaleDateString()}
                         </CardDescription>
                       </div>
-                      <Badge variant={tenant.status === 'active' ? 'default' : 'secondary'}>
-                        {tenant.status}
-                      </Badge>
+                      <StatusBadge status={tenant.status as any} />
                     </div>
                   </CardHeader>
                   <CardContent>
