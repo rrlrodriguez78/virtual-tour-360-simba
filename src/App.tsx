@@ -7,12 +7,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./components/contexts/ThemeContext";
 import { UserSettingsProvider } from "./contexts/UserSettingsContext";
 import { TenantProvider } from "./contexts/TenantContext";
-import { PlatformEditorProvider } from "./contexts/PlatformEditorContext";
-import { SplitViewProvider } from "./contexts/SplitViewContext";
 import { A11ySkipLink } from "./components/A11ySkipLink";
 import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
-import { PlatformPreviewSwitcher } from "./components/dev/PlatformPreviewSwitcher";
-import { GlobalPlatformEditor } from "./components/platform-manager/GlobalPlatformEditor";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Inicio from "./pages/Inicio";
@@ -32,15 +28,8 @@ import TenantAdmin from "./pages/TenantAdmin";
 import TenantMembers from "./pages/TenantMembers";
 import UserApprovals from "./pages/UserApprovals";
 import FeatureManagement from "./pages/FeatureManagement";
-import CompatibilityTest from "./pages/CompatibilityTest";
-import CompatibilityReport from "./pages/CompatibilityReport";
-import SwipeDemo from "./pages/SwipeDemo";
-import PWASplashGenerator from "./pages/PWASplashGenerator";
 import BackupsPage from "./pages/BackupsPage";
 import AuthCallback from "./pages/AuthCallback";
-import PlatformUIManager from "./pages/PlatformUIManager";
-import PlatformControlCenter from "./pages/PlatformControlCenter";
-import SplitViewDev from "./pages/SplitViewDev";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,13 +45,9 @@ const App = () => (
           <AuthProvider>
             <TenantProvider>
               <UserSettingsProvider>
-                <PlatformEditorProvider>
-                  <SplitViewProvider>
-                    <PWAUpdatePrompt />
-                    <PlatformPreviewSwitcher />
-                    <GlobalPlatformEditor />
-                    <main id="main-content">
-                      <Routes>
+                <PWAUpdatePrompt />
+                <main id="main-content">
+                  <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Landing />} />
                   <Route path="/login" element={<Auth />} />
@@ -84,21 +69,12 @@ const App = () => (
                   <Route path="/app/tenant-admin" element={<TenantAdmin />} />
                   <Route path="/app/tenant-members" element={<TenantMembers />} />
                   <Route path="/app/feature-management" element={<FeatureManagement />} />
-                  <Route path="/app/compatibility" element={<CompatibilityTest />} />
-                  <Route path="/app/compatibility-report" element={<CompatibilityReport />} />
-                  <Route path="/app/swipe-demo" element={<SwipeDemo />} />
-                  <Route path="/app/pwa-splash" element={<PWASplashGenerator />} />
                   <Route path="/app/backups" element={<BackupsPage />} />
-                  <Route path="/app/platform-ui-manager" element={<PlatformUIManager />} />
-                  <Route path="/app/platform-control" element={<PlatformControlCenter />} />
-                  <Route path="/dev/split-view" element={<SplitViewDev />} />
                   
-                      {/* Catch-all route */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                    </main>
-                  </SplitViewProvider>
-                </PlatformEditorProvider>
+                    {/* Catch-all route */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
               </UserSettingsProvider>
             </TenantProvider>
           </AuthProvider>
