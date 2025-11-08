@@ -21,8 +21,12 @@ import {
   RefreshCw,
   Volume2,
   BarChart3,
-  CreditCard
+  CreditCard,
+  Camera,
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
+import { useNativeCamera } from '@/hooks/useNativeCamera';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NotificationsList } from '@/components/settings/NotificationsList';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
@@ -44,7 +48,9 @@ const UserSettings = () => {
   const { user, loading: authLoading } = useAuth();
   const { settings, loading: settingsLoading, updateSettings } = useUserSettingsContext();
   const { isSuperAdmin } = useIsSuperAdmin();
+  const { takePicture, pickFromGallery, loading: cameraLoading } = useNativeCamera();
   const [loading, setLoading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [profile, setProfile] = useState({
     email: '',
     full_name: '',
@@ -77,6 +83,80 @@ const UserSettings = () => {
     }
   };
 
+  const uploadAvatar = async (base64Image: string, format: string) => {
+    if (!user) return null;
+
+    try {
+      setUploadingPhoto(true);
+      
+      // Convert base64 to blob
+      const base64Data = base64Image.split(',')[1] || base64Image;
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: `image/${format}` });
+
+      // Upload to Supabase Storage
+      const fileName = `${user.id}_${Date.now()}.${format}`;
+      const { data, error } = await supabase.storage
+        .from('tour-images')
+        .upload(`avatars/${fileName}`, blob, {
+          contentType: `image/${format}`,
+          upsert: true
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('tour-images')
+        .getPublicUrl(`avatars/${fileName}`);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Error al subir la foto');
+      return null;
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const result = await takePicture();
+      if (result?.base64 && result?.format) {
+        const publicUrl = await uploadAvatar(result.base64, result.format);
+        if (publicUrl) {
+          setProfile({ ...profile, avatar_url: publicUrl });
+          toast.success('Foto capturada exitosamente');
+        }
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      toast.error('Error al capturar la foto');
+    }
+  };
+
+  const handlePickFromGallery = async () => {
+    try {
+      const result = await pickFromGallery();
+      if (result?.base64 && result?.format) {
+        const publicUrl = await uploadAvatar(result.base64, result.format);
+        if (publicUrl) {
+          setProfile({ ...profile, avatar_url: publicUrl });
+          toast.success('Foto seleccionada exitosamente');
+        }
+      }
+    } catch (error) {
+      console.error('Error picking photo:', error);
+      toast.error('Error al seleccionar la foto');
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!user) return;
 
@@ -90,10 +170,10 @@ const UserSettings = () => {
       });
 
       if (error) throw error;
-      toast.success('Profile updated successfully');
+      toast.success('Perfil actualizado correctamente');
     } catch (error) {
       console.error('Error saving profile:', error);
-      toast.error('Error saving profile');
+      toast.error('Error al guardar el perfil');
     } finally {
       setLoading(false);
     }
@@ -187,15 +267,56 @@ const UserSettings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback>
-                      {profile.full_name?.charAt(0) || profile.email?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <Label htmlFor="avatar_url">Avatar URL</Label>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={profile.avatar_url} />
+                      <AvatarFallback className="text-2xl">
+                        {profile.full_name?.charAt(0) || profile.email?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 space-y-2">
+                      <Label>Foto de Perfil</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Toma una foto o selecciona desde tu galería
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleTakePhoto}
+                          disabled={uploadingPhoto || cameraLoading}
+                        >
+                          {uploadingPhoto ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Camera className="h-4 w-4 mr-2" />
+                          )}
+                          Tomar Foto
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePickFromGallery}
+                          disabled={uploadingPhoto || cameraLoading}
+                        >
+                          {uploadingPhoto ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <ImageIcon className="h-4 w-4 mr-2" />
+                          )}
+                          Galería
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="avatar_url" className="text-xs text-muted-foreground">
+                      O ingresa una URL de imagen
+                    </Label>
                     <Input
                       id="avatar_url"
                       value={profile.avatar_url}
