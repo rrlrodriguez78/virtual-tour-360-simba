@@ -27,6 +27,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useNativeCamera } from '@/hooks/useNativeCamera';
+import { AvatarEditor } from '@/components/settings/AvatarEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NotificationsList } from '@/components/settings/NotificationsList';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
@@ -51,6 +52,8 @@ const UserSettings = () => {
   const { takePicture, pickFromGallery, loading: cameraLoading } = useNativeCamera();
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState<string>('');
   const [profile, setProfile] = useState({
     email: '',
     full_name: '',
@@ -83,28 +86,18 @@ const UserSettings = () => {
     }
   };
 
-  const uploadAvatar = async (base64Image: string, format: string) => {
+  const uploadAvatarBlob = async (blob: Blob) => {
     if (!user) return null;
 
     try {
       setUploadingPhoto(true);
-      
-      // Convert base64 to blob
-      const base64Data = base64Image.split(',')[1] || base64Image;
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: `image/${format}` });
 
       // Upload to Supabase Storage
-      const fileName = `${user.id}_${Date.now()}.${format}`;
+      const fileName = `${user.id}_${Date.now()}.jpg`;
       const { data, error } = await supabase.storage
         .from('tour-images')
         .upload(`avatars/${fileName}`, blob, {
-          contentType: `image/${format}`,
+          contentType: 'image/jpeg',
           upsert: true
         });
 
@@ -128,12 +121,14 @@ const UserSettings = () => {
   const handleTakePhoto = async () => {
     try {
       const result = await takePicture();
-      if (result?.base64 && result?.format) {
-        const publicUrl = await uploadAvatar(result.base64, result.format);
-        if (publicUrl) {
-          setProfile({ ...profile, avatar_url: publicUrl });
-          toast.success('Foto capturada exitosamente');
-        }
+      if (result?.base64) {
+        // Convert base64 to data URL
+        const dataUrl = result.base64.startsWith('data:') 
+          ? result.base64 
+          : `data:image/${result.format};base64,${result.base64}`;
+        
+        setTempImageUrl(dataUrl);
+        setEditorOpen(true);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -144,16 +139,26 @@ const UserSettings = () => {
   const handlePickFromGallery = async () => {
     try {
       const result = await pickFromGallery();
-      if (result?.base64 && result?.format) {
-        const publicUrl = await uploadAvatar(result.base64, result.format);
-        if (publicUrl) {
-          setProfile({ ...profile, avatar_url: publicUrl });
-          toast.success('Foto seleccionada exitosamente');
-        }
+      if (result?.base64) {
+        // Convert base64 to data URL
+        const dataUrl = result.base64.startsWith('data:') 
+          ? result.base64 
+          : `data:image/${result.format};base64,${result.base64}`;
+        
+        setTempImageUrl(dataUrl);
+        setEditorOpen(true);
       }
     } catch (error) {
       console.error('Error picking photo:', error);
       toast.error('Error al seleccionar la foto');
+    }
+  };
+
+  const handleSaveCroppedImage = async (croppedBlob: Blob) => {
+    const publicUrl = await uploadAvatarBlob(croppedBlob);
+    if (publicUrl) {
+      setProfile({ ...profile, avatar_url: publicUrl });
+      toast.success('Foto de perfil actualizada');
     }
   };
 
@@ -422,6 +427,13 @@ const UserSettings = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <AvatarEditor
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        imageUrl={tempImageUrl}
+        onSave={handleSaveCroppedImage}
+      />
     </div>
   );
 };
