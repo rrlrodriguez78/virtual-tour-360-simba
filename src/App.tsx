@@ -30,6 +30,7 @@ import UserApprovals from "./pages/UserApprovals";
 import FeatureManagement from "./pages/FeatureManagement";
 import BackupsPage from "./pages/BackupsPage";
 import AuthCallback from "./pages/AuthCallback";
+import NativeFeatures from "./pages/NativeFeatures";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ const App = () => (
                   <Route path="/app/tenant-members" element={<TenantMembers />} />
                   <Route path="/app/feature-management" element={<FeatureManagement />} />
                   <Route path="/app/backups" element={<BackupsPage />} />
+                  <Route path="/app/native-features" element={<NativeFeatures />} />
                   
                     {/* Catch-all route */}
                     <Route path="*" element={<NotFound />} />
