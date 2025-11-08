@@ -18,7 +18,9 @@ export const NotificationSettings = () => {
     email_on_new_view: true,
     email_on_new_user: true,
     email_weekly_report: true,
-    push_on_new_view: true
+    push_on_new_view: true,
+    push_on_new_comment: true,
+    push_on_new_like: true
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -331,15 +333,22 @@ export const NotificationSettings = () => {
         <div className="space-y-4 pt-4 border-t">
           <div className="flex items-center gap-2">
             <Bell className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-medium">Notificaciones Push</h3>
+            <h3 className="text-lg font-medium">Notificaciones Push Personalizadas</h3>
           </div>
+          
+          <Alert>
+            <Smartphone className="h-4 w-4" />
+            <AlertDescription>
+              Personaliza qué eventos te notificarán en tu dispositivo Android.
+            </AlertDescription>
+          </Alert>
           
           <div className="space-y-4 pl-7">
             <div className="flex items-center justify-between">
               <Label htmlFor="push-new-view" className="flex flex-col gap-1 cursor-pointer flex-1">
-                <span>Nuevas vistas</span>
+                <span>Nuevas vistas en tours</span>
                 <span className="font-normal text-sm text-muted-foreground">
-                  Notificaciones en tiempo real en la aplicación
+                  Recibe notificación cuando alguien vea tus tours
                 </span>
               </Label>
               <Switch
@@ -347,6 +356,38 @@ export const NotificationSettings = () => {
                 checked={settings.push_on_new_view}
                 onCheckedChange={(checked) =>
                   setSettings({ ...settings, push_on_new_view: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <Label htmlFor="push-new-comment" className="flex flex-col gap-1 cursor-pointer flex-1">
+                <span>Nuevos comentarios</span>
+                <span className="font-normal text-sm text-muted-foreground">
+                  Notificación cuando alguien comenta en tus tours
+                </span>
+              </Label>
+              <Switch
+                id="push-new-comment"
+                checked={settings.push_on_new_comment}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, push_on_new_comment: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <Label htmlFor="push-new-like" className="flex flex-col gap-1 cursor-pointer flex-1">
+                <span>Nuevos "me gusta"</span>
+                <span className="font-normal text-sm text-muted-foreground">
+                  Notificación cuando a alguien le gusta tu tour
+                </span>
+              </Label>
+              <Switch
+                id="push-new-like"
+                checked={settings.push_on_new_like}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, push_on_new_like: checked })
                 }
               />
             </div>

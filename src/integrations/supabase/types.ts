@@ -957,6 +957,8 @@ export type Database = {
           email_on_new_view: boolean | null
           email_weekly_report: boolean | null
           id: string
+          push_on_new_comment: boolean | null
+          push_on_new_like: boolean | null
           push_on_new_view: boolean | null
           updated_at: string
           user_id: string
@@ -967,6 +969,8 @@ export type Database = {
           email_on_new_view?: boolean | null
           email_weekly_report?: boolean | null
           id?: string
+          push_on_new_comment?: boolean | null
+          push_on_new_like?: boolean | null
           push_on_new_view?: boolean | null
           updated_at?: string
           user_id: string
@@ -977,6 +981,8 @@ export type Database = {
           email_on_new_view?: boolean | null
           email_weekly_report?: boolean | null
           id?: string
+          push_on_new_comment?: boolean | null
+          push_on_new_like?: boolean | null
           push_on_new_view?: boolean | null
           updated_at?: string
           user_id?: string
