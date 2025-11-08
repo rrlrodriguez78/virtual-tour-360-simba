@@ -37,7 +37,6 @@ import { LanguageRegionSettings } from '@/components/settings/LanguageRegionSett
 import { PrivacySecuritySettings } from '@/components/settings/PrivacySecuritySettings';
 import { MobileSettings } from '@/components/settings/MobileSettings';
 import { AudioVideoSettings } from '@/components/settings/AudioVideoSettings';
-import { AnalyticsSettings } from '@/components/settings/AnalyticsSettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
 import { SettingsAccessAudit } from '@/components/settings/SettingsAccessAudit';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
@@ -231,7 +230,7 @@ const UserSettings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 mb-8">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-8 mb-8">
             <TabsTrigger value="profile" className="gap-1">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -255,10 +254,6 @@ const UserSettings = () => {
             <TabsTrigger value="media" className="gap-1">
               <Volume2 className="w-4 h-4" />
               <span className="hidden sm:inline">Media</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-1">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
             <TabsTrigger value="account" className="gap-1">
               <CreditCard className="w-4 h-4" />
@@ -388,10 +383,6 @@ const UserSettings = () => {
 
           <TabsContent value="media">
             <AudioVideoSettings settings={settings} onUpdate={updateSettings} />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <AnalyticsSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
 
           <TabsContent value="account">
