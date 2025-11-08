@@ -7,10 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Bell, Mail, Clock, Loader2 } from 'lucide-react';
+import { Bell, Mail, Clock, Loader2, Smartphone, CheckCircle2, XCircle } from 'lucide-react';
+import { useNativePushNotifications } from '@/hooks/useNativePushNotifications';
+import { Badge } from '@/components/ui/badge';
 
 export const NotificationSettings = () => {
   const { user } = useAuth();
+  const { initialize, token, notifications, initialized } = useNativePushNotifications();
   const [settings, setSettings] = useState({
     email_on_new_view: true,
     email_on_new_user: true,
@@ -128,6 +131,16 @@ export const NotificationSettings = () => {
     }
   };
 
+  const handleInitializeNativePush = async () => {
+    try {
+      await initialize();
+      toast.success('Notificaciones push nativas activadas');
+    } catch (error) {
+      console.error('Error initializing native push:', error);
+      toast.error('Error al activar notificaciones push nativas');
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -141,20 +154,97 @@ export const NotificationSettings = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Configuración de Notificaciones</CardTitle>
-        <CardDescription>
-          Gestiona cómo y cuándo recibes notificaciones
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <Alert>
-          <Mail className="h-4 w-4" />
-          <AlertDescription>
-            Los emails se envían a tu dirección de registro. Puedes probar las notificaciones usando los botones de prueba.
-          </AlertDescription>
-        </Alert>
+    <div className="space-y-6">
+      {/* Native Push Notifications Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5 text-primary" />
+            <CardTitle>Notificaciones Push Nativas</CardTitle>
+          </div>
+          <CardDescription>
+            Configuración de notificaciones push de Android
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <Bell className="h-4 w-4" />
+            <AlertDescription>
+              Las notificaciones push nativas funcionan incluso cuando la app está cerrada.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label className="text-base font-medium">Estado Push Nativo</Label>
+                  {initialized ? (
+                    <Badge className="bg-green-500">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Activado
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Inactivo
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {initialized 
+                    ? 'Las notificaciones push están activas'
+                    : 'Activa las notificaciones para recibir alertas en tiempo real'
+                  }
+                </p>
+              </div>
+              {!initialized && (
+                <Button onClick={handleInitializeNativePush} variant="default">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Activar
+                </Button>
+              )}
+            </div>
+
+            {initialized && token && (
+              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <Label className="text-xs text-muted-foreground">Token FCM</Label>
+                <p className="text-xs font-mono break-all">{token.substring(0, 50)}...</p>
+              </div>
+            )}
+
+            {notifications.length > 0 && (
+              <div className="space-y-2">
+                <Label>Notificaciones Recientes ({notifications.length})</Label>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {notifications.slice(0, 3).map((notif, idx) => (
+                    <div key={idx} className="p-3 bg-muted/30 rounded-lg">
+                      <p className="text-sm font-medium">{notif.title}</p>
+                      <p className="text-xs text-muted-foreground">{notif.body}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Email & Web Notifications Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Configuración de Notificaciones</CardTitle>
+          <CardDescription>
+            Gestiona cómo y cuándo recibes notificaciones
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Alert>
+            <Mail className="h-4 w-4" />
+            <AlertDescription>
+              Los emails se envían a tu dirección de registro. Puedes probar las notificaciones usando los botones de prueba.
+            </AlertDescription>
+          </Alert>
 
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -263,21 +353,22 @@ export const NotificationSettings = () => {
           </div>
         </div>
 
-        <Button 
-          onClick={saveSettings} 
-          disabled={saving}
-          className="w-full"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Guardando...
-            </>
-          ) : (
-            'Guardar Configuración'
-          )}
-        </Button>
-      </CardContent>
-    </Card>
+          <Button 
+            onClick={saveSettings} 
+            disabled={saving}
+            className="w-full"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar Configuración'
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
