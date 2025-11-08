@@ -322,22 +322,9 @@ const UserSettings = () => {
                           Galería
                         </Button>
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="avatar_url" className="text-xs text-muted-foreground">
-                      O ingresa una URL de imagen
-                    </Label>
-                    <Input
-                      id="avatar_url"
-                      value={profile.avatar_url}
-                      onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })}
-                      placeholder="https://example.com/avatar.jpg"
-                      className="mt-1"
-                    />
                   </div>
                 </div>
+              </div>
 
                 <div>
                   <Label htmlFor="full_name">Full Name</Label>
