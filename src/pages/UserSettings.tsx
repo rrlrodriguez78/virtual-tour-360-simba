@@ -121,14 +121,9 @@ const UserSettings = () => {
   const handleTakePhoto = async () => {
     try {
       const result = await takePicture();
-      if (result?.base64) {
-        // Convert base64 to data URL
-        const dataUrl = result.base64.startsWith('data:') 
-          ? result.base64 
-          : `data:image/${result.format};base64,${result.base64}`;
-        
-        setTempImageUrl(dataUrl);
-        setPreviewUrl(dataUrl); // Set preview immediately
+      if (result?.dataUrl) {
+        setTempImageUrl(result.dataUrl);
+        setPreviewUrl(result.dataUrl);
         setEditorOpen(true);
       }
     } catch (error) {
@@ -140,14 +135,9 @@ const UserSettings = () => {
   const handlePickFromGallery = async () => {
     try {
       const result = await pickFromGallery();
-      if (result?.base64) {
-        // Convert base64 to data URL
-        const dataUrl = result.base64.startsWith('data:') 
-          ? result.base64 
-          : `data:image/${result.format};base64,${result.base64}`;
-        
-        setTempImageUrl(dataUrl);
-        setPreviewUrl(dataUrl); // Set preview immediately
+      if (result?.dataUrl) {
+        setTempImageUrl(result.dataUrl);
+        setPreviewUrl(result.dataUrl);
         setEditorOpen(true);
       }
     } catch (error) {

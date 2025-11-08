@@ -32,8 +32,8 @@ const NativeFeatures = () => {
 
   const handleTakePicture = async () => {
     const result = await camera.takePicture();
-    if (result?.imageUrl) {
-      setCapturedImage(result.imageUrl);
+    if (result?.dataUrl) {
+      setCapturedImage(result.dataUrl);
       toast.success('Foto capturada exitosamente');
     }
   };
@@ -103,7 +103,7 @@ const NativeFeatures = () => {
                   variant="outline" 
                   onClick={async () => {
                     const result = await camera.pickFromGallery();
-                    if (result?.imageUrl) setCapturedImage(result.imageUrl);
+                    if (result?.dataUrl) setCapturedImage(result.dataUrl);
                   }}
                   disabled={camera.loading}
                 >

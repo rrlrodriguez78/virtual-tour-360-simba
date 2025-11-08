@@ -11,14 +11,13 @@ export const useNativeCamera = () => {
       const image = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.DataUrl,
         source: CameraSource.Camera
       });
 
       return {
-        imageUrl: image.webPath,
-        format: image.format,
-        base64: image.base64String
+        dataUrl: image.dataUrl,
+        format: image.format
       };
     } catch (error) {
       console.error('Error taking picture:', error);
@@ -35,14 +34,13 @@ export const useNativeCamera = () => {
       const image = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.DataUrl,
         source: CameraSource.Photos
       });
 
       return {
-        imageUrl: image.webPath,
-        format: image.format,
-        base64: image.base64String
+        dataUrl: image.dataUrl,
+        format: image.format
       };
     } catch (error) {
       console.error('Error picking from gallery:', error);
