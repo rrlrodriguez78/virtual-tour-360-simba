@@ -154,9 +154,26 @@ const UserSettings = () => {
 
   const handleSaveCroppedImage = async (croppedBlob: Blob) => {
     const publicUrl = await uploadAvatarBlob(croppedBlob);
-    if (publicUrl) {
-      setProfile({ ...profile, avatar_url: publicUrl });
-      toast.success('Foto de perfil actualizada');
+    if (publicUrl && user) {
+      try {
+        // Update profile state
+        setProfile({ ...profile, avatar_url: publicUrl });
+        
+        // Save to database immediately
+        const { error } = await supabase.auth.updateUser({
+          data: {
+            avatar_url: publicUrl,
+          }
+        });
+
+        if (error) throw error;
+        
+        setEditorOpen(false);
+        toast.success('Foto de perfil actualizada correctamente');
+      } catch (error) {
+        console.error('Error saving avatar:', error);
+        toast.error('Error al guardar la foto de perfil');
+      }
     }
   };
 
