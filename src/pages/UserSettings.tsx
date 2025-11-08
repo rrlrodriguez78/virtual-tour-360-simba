@@ -49,7 +49,7 @@ const UserSettings = () => {
   const { settings, loading: settingsLoading, updateSettings } = useUserSettingsContext();
   const { isSuperAdmin } = useIsSuperAdmin();
   const { takePicture, pickFromGallery, loading: cameraLoading } = useNativeCamera();
-  const { setPreviewUrl } = useAvatarPreview();
+  const { previewUrl, setPreviewUrl } = useAvatarPreview();
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -291,8 +291,8 @@ const UserSettings = () => {
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={profile.avatar_url} />
+                    <Avatar className="h-24 w-24 ring-2 ring-primary/20 transition-all duration-300">
+                      <AvatarImage src={previewUrl || profile.avatar_url} />
                       <AvatarFallback className="text-2xl">
                         {profile.full_name?.charAt(0) || profile.email?.charAt(0) || 'U'}
                       </AvatarFallback>
