@@ -18,7 +18,6 @@ import {
   Globe,
   Shield,
   Smartphone,
-  RefreshCw,
   Volume2,
   BarChart3,
   CreditCard,
@@ -37,7 +36,6 @@ import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { LanguageRegionSettings } from '@/components/settings/LanguageRegionSettings';
 import { PrivacySecuritySettings } from '@/components/settings/PrivacySecuritySettings';
 import { MobileSettings } from '@/components/settings/MobileSettings';
-import { SyncSettings } from '@/components/settings/SyncSettings';
 import { AudioVideoSettings } from '@/components/settings/AudioVideoSettings';
 import { AnalyticsSettings } from '@/components/settings/AnalyticsSettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
@@ -220,7 +218,7 @@ const UserSettings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 mb-8">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 mb-8">
             <TabsTrigger value="profile" className="gap-1">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -240,10 +238,6 @@ const UserSettings = () => {
             <TabsTrigger value="mobile" className="gap-1">
               <Smartphone className="w-4 h-4" />
               <span className="hidden sm:inline">Mobile</span>
-            </TabsTrigger>
-            <TabsTrigger value="sync" className="gap-1">
-              <RefreshCw className="w-4 h-4" />
-              <span className="hidden sm:inline">Sync</span>
             </TabsTrigger>
             <TabsTrigger value="media" className="gap-1">
               <Volume2 className="w-4 h-4" />
@@ -390,10 +384,6 @@ const UserSettings = () => {
             <div className="space-y-6">
               <MobileSettings settings={settings} onUpdate={updateSettings} />
             </div>
-          </TabsContent>
-
-          <TabsContent value="sync">
-            <SyncSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
 
           <TabsContent value="media">
