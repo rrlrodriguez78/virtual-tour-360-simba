@@ -1,13 +1,23 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/Navbar';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { MapPin, Layout, Eye, Zap } from 'lucide-react';
 import heroImage from '@/assets/hero-bg.jpg';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Landing = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/app/tours');
+    }
+  }, [user, loading, navigate]);
   
   return (
     <div className="min-h-screen bg-background">
