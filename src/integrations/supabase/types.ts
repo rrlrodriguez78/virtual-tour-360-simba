@@ -679,6 +679,42 @@ export type Database = {
         }
         Relationships: []
       }
+      fcm_tokens: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          device_type: string
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          token: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          device_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          token: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          device_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          token?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       features: {
         Row: {
           created_at: string | null
