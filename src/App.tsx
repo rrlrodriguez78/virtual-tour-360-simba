@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./components/contexts/ThemeContext";
 import { UserSettingsProvider } from "./contexts/UserSettingsContext";
 import { TenantProvider } from "./contexts/TenantContext";
+import { AvatarPreviewProvider } from "./contexts/AvatarPreviewContext";
 import { A11ySkipLink } from "./components/A11ySkipLink";
 import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
 import Landing from "./pages/Landing";
@@ -46,8 +47,9 @@ const App = () => (
           <AuthProvider>
             <TenantProvider>
               <UserSettingsProvider>
-                <PWAUpdatePrompt />
-                <main id="main-content">
+                <AvatarPreviewProvider>
+                  <PWAUpdatePrompt />
+                  <main id="main-content">
                   <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Landing />} />
@@ -77,13 +79,14 @@ const App = () => (
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
-              </UserSettingsProvider>
-            </TenantProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+              </AvatarPreviewProvider>
+            </UserSettingsProvider>
+          </TenantProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </ThemeProvider>
+</QueryClientProvider>
 );
 
 export default App;

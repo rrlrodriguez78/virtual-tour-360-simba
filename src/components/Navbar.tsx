@@ -7,6 +7,9 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import TenantSwitcher from './TenantSwitcher';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAvatarPreview } from '@/contexts/AvatarPreviewContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +22,11 @@ export const Navbar = () => {
   const { t } = useTranslation();
   const { isSuperAdmin } = useIsSuperAdmin();
   const { isTenantAdmin } = useTenant();
+  const { profile } = useUserProfile();
+  const { previewUrl } = useAvatarPreview();
+  
+  const avatarUrl = previewUrl || profile?.avatar_url || '';
+  const displayInitial = profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || user?.email?.charAt(0) || 'U';
 
   return (
     <>
@@ -36,6 +44,13 @@ export const Navbar = () => {
             <LanguageSwitcher />
             {user ? (
               <>
+                <Avatar className="h-9 w-9 border-2 border-border ring-2 ring-primary/20 transition-all hover:ring-primary/40">
+                  <AvatarImage src={avatarUrl} alt="User avatar" />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {displayInitial}
+                  </AvatarFallback>
+                </Avatar>
+                
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9 w-9 sm:w-auto sm:px-4 p-0 sm:p-2">

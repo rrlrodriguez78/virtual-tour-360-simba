@@ -41,6 +41,7 @@ import { AnalyticsSettings } from '@/components/settings/AnalyticsSettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
 import { SettingsAccessAudit } from '@/components/settings/SettingsAccessAudit';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
+import { useAvatarPreview } from '@/contexts/AvatarPreviewContext';
 
 const UserSettings = () => {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ const UserSettings = () => {
   const { settings, loading: settingsLoading, updateSettings } = useUserSettingsContext();
   const { isSuperAdmin } = useIsSuperAdmin();
   const { takePicture, pickFromGallery, loading: cameraLoading } = useNativeCamera();
+  const { setPreviewUrl } = useAvatarPreview();
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -126,6 +128,7 @@ const UserSettings = () => {
           : `data:image/${result.format};base64,${result.base64}`;
         
         setTempImageUrl(dataUrl);
+        setPreviewUrl(dataUrl); // Set preview immediately
         setEditorOpen(true);
       }
     } catch (error) {
@@ -144,6 +147,7 @@ const UserSettings = () => {
           : `data:image/${result.format};base64,${result.base64}`;
         
         setTempImageUrl(dataUrl);
+        setPreviewUrl(dataUrl); // Set preview immediately
         setEditorOpen(true);
       }
     } catch (error) {
@@ -169,10 +173,12 @@ const UserSettings = () => {
         if (error) throw error;
         
         setEditorOpen(false);
+        setPreviewUrl(null); // Clear preview after saving
         toast.success('Foto de perfil actualizada correctamente');
       } catch (error) {
         console.error('Error saving avatar:', error);
         toast.error('Error al guardar la foto de perfil');
+        setPreviewUrl(null); // Clear preview on error
       }
     }
   };
@@ -437,7 +443,10 @@ const UserSettings = () => {
 
       <AvatarEditor
         open={editorOpen}
-        onClose={() => setEditorOpen(false)}
+        onClose={() => {
+          setEditorOpen(false);
+          setPreviewUrl(null); // Clear preview when closing without saving
+        }}
         imageUrl={tempImageUrl}
         onSave={handleSaveCroppedImage}
       />
