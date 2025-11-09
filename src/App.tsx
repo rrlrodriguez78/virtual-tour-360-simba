@@ -30,6 +30,7 @@ import TenantMembers from "./pages/TenantMembers";
 import UserApprovals from "./pages/UserApprovals";
 import FeatureManagement from "./pages/FeatureManagement";
 import BackupsPage from "./pages/BackupsPage";
+import PhotoProject from "./pages/PhotoProject";
 import AuthCallback from "./pages/AuthCallback";
 import NativeFeatures from "./pages/NativeFeatures";
 import NotFound from "./pages/NotFound";
@@ -62,6 +63,7 @@ const App = () => (
                   {/* Protected routes */}
                   <Route path="/app/inicio" element={<Inicio />} />
                   <Route path="/app/tours" element={<PlatformRouteElement webComponent={Dashboard} androidComponent={DashboardAndroid} pageName="Dashboard" />} />
+                  <Route path="/app/photo-project" element={<PhotoProject />} />
                   <Route path="/app/tours-publicos" element={<PublicTours />} />
                   <Route path="/app/editor/:id" element={<PlatformRouteElement webComponent={Editor} androidComponent={EditorAndroid} pageName="Editor" />} />
                   <Route path="/app/photo-editor/:id" element={<PhotoEditor />} />

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { MapPin, LogOut, Settings, Menu, Home, Globe, User, Sparkles, LayoutDashboard, Plus, Building2, Users, UserCheck, Archive } from 'lucide-react';
+import { MapPin, LogOut, Settings, Menu, Home, Globe, User, Sparkles, LayoutDashboard, Plus, Building2, Users, UserCheck, Archive, Camera } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -75,6 +75,12 @@ export const Navbar = () => {
                       <Link to="/app/tours" className="flex items-center cursor-pointer">
                         <MapPin className="w-4 h-4 mr-2" />
                         {t('nav.tours')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/app/photo-project" className="flex items-center cursor-pointer">
+                        <Camera className="w-4 h-4 mr-2" />
+                        Photo Project
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
