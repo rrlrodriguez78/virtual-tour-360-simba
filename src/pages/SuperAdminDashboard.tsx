@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Users, Trash2, Edit, Plus, Flag, ArrowLeft } from 'lucide-react';
+import { Building2, Users, Trash2, Edit, Plus, Flag, ArrowLeft, Shield, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import { WorkflowGuide } from '@/components/admin/WorkflowGuide';
@@ -50,6 +50,15 @@ interface TenantUser {
   full_name?: string;
 }
 
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  account_status: string;
+  created_at: string;
+  is_super_admin?: boolean;
+}
+
 export default function SuperAdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -60,6 +69,14 @@ export default function SuperAdminDashboard() {
   const [showTenantDialog, setShowTenantDialog] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [tenantForm, setTenantForm] = useState({ name: '', status: 'active', subscription_tier: 'free' });
+  
+  // Super Admin Management
+  const [superAdmins, setSuperAdmins] = useState<UserProfile[]>([]);
+  const [approvedUsers, setApprovedUsers] = useState<UserProfile[]>([]);
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [confirmationText, setConfirmationText] = useState('');
 
   useEffect(() => {
     if (!adminLoading && !isSuperAdmin && user && !isInIframePreview) {
@@ -70,6 +87,8 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     if (isSuperAdmin) {
       loadTenants();
+      loadSuperAdmins();
+      loadApprovedUsers();
     }
   }, [isSuperAdmin]);
 
@@ -185,6 +204,123 @@ export default function SuperAdminDashboard() {
     setShowTenantDialog(true);
   };
 
+  const loadSuperAdmins = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          email,
+          full_name,
+          account_status,
+          created_at,
+          user_roles!inner(role)
+        `)
+        .eq('user_roles.role', 'admin')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSuperAdmins((data as any) || []);
+    } catch (error) {
+      console.error('Error loading super admins:', error);
+      toast.error('Error al cargar Super Admins');
+    }
+  };
+
+  const loadApprovedUsers = async () => {
+    try {
+      // Get all approved users
+      const { data: allUsers, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, account_status, created_at')
+        .eq('account_status', 'approved')
+        .order('created_at', { ascending: false });
+
+      if (usersError) throw usersError;
+
+      // Get super admin user IDs
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (rolesError) throw rolesError;
+
+      const adminIds = new Set((adminRoles || []).map(r => r.user_id));
+      
+      // Filter out super admins
+      const nonAdminUsers = (allUsers || []).filter(u => !adminIds.has(u.id));
+      setApprovedUsers(nonAdminUsers);
+    } catch (error) {
+      console.error('Error loading approved users:', error);
+      toast.error('Error al cargar usuarios aprobados');
+    }
+  };
+
+  const handlePromoteToSuperAdmin = async () => {
+    if (!selectedUser || confirmationText !== 'PROMOVER') {
+      toast.error('Escribe "PROMOVER" para confirmar');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.rpc('promote_to_super_admin', {
+        _user_id: selectedUser.id,
+        _promoted_by: user!.id
+      });
+
+      if (error) throw error;
+
+      toast.success(`${selectedUser.full_name} ha sido promovido a Super Admin`);
+      setShowPromoteDialog(false);
+      setSelectedUser(null);
+      setConfirmationText('');
+      loadSuperAdmins();
+      loadApprovedUsers();
+    } catch (error: any) {
+      console.error('Error promoting user:', error);
+      toast.error(error.message || 'Error al promover usuario');
+    }
+  };
+
+  const handleRevokeSuperAdmin = async () => {
+    if (!selectedUser || confirmationText !== 'REVOCAR') {
+      toast.error('Escribe "REVOCAR" para confirmar');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.rpc('revoke_super_admin', {
+        _user_id: selectedUser.id,
+        _revoked_by: user!.id
+      });
+
+      if (error) throw error;
+
+      toast.success(`Privilegios de Super Admin revocados para ${selectedUser.full_name}`);
+      setShowRevokeDialog(false);
+      setSelectedUser(null);
+      setConfirmationText('');
+      loadSuperAdmins();
+      loadApprovedUsers();
+    } catch (error: any) {
+      console.error('Error revoking super admin:', error);
+      toast.error(error.message || 'Error al revocar privilegios');
+    }
+  };
+
+  const openPromoteDialog = (userProfile: UserProfile) => {
+    setSelectedUser(userProfile);
+    setConfirmationText('');
+    setShowPromoteDialog(true);
+  };
+
+  const openRevokeDialog = (userProfile: UserProfile) => {
+    setSelectedUser(userProfile);
+    setConfirmationText('');
+    setShowRevokeDialog(true);
+  };
+
   if (adminLoading || loading) {
     return <div className="p-8">Cargando...</div>;
   }
@@ -237,6 +373,10 @@ export default function SuperAdminDashboard() {
         <Tabs defaultValue="tenants" className="w-full">
           <TabsList>
             <TabsTrigger value="tenants">Tenants</TabsTrigger>
+            <TabsTrigger value="super-admins">
+              <Shield className="w-4 h-4 mr-2" />
+              Super Admins
+            </TabsTrigger>
             <TabsTrigger value="stats">Estadísticas</TabsTrigger>
           </TabsList>
 
@@ -284,6 +424,87 @@ export default function SuperAdminDashboard() {
             </div>
           </TabsContent>
 
+          <TabsContent value="super-admins" className="space-y-6">
+            {/* Current Super Admins */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  Super Admins Actuales ({superAdmins.length})
+                </CardTitle>
+                <CardDescription>
+                  Usuarios con acceso completo al sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {superAdmins.map((admin) => (
+                    <div key={admin.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <div className="font-medium">{admin.full_name}</div>
+                        <div className="text-sm text-muted-foreground">{admin.email}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Desde: {new Date(admin.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="default">Super Admin</Badge>
+                        {superAdmins.length > 1 && admin.id !== user?.id && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => openRevokeDialog(admin)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Promote Users to Super Admin */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Promover Usuario a Super Admin</CardTitle>
+                <CardDescription>
+                  Selecciona un usuario aprobado para darle privilegios de Super Admin
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {approvedUsers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No hay usuarios aprobados disponibles para promover
+                    </p>
+                  ) : (
+                    approvedUsers.map((userProfile) => (
+                      <div key={userProfile.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <div className="font-medium">{userProfile.full_name}</div>
+                          <div className="text-sm text-muted-foreground">{userProfile.email}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Registrado: {new Date(userProfile.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => openPromoteDialog(userProfile)}
+                          className="gap-2"
+                        >
+                          <Shield className="w-4 h-4" />
+                          Promover
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="stats">
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
@@ -317,6 +538,97 @@ export default function SuperAdminDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Promote Dialog */}
+        <Dialog open={showPromoteDialog} onOpenChange={setShowPromoteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-warning" />
+                Promover a Super Admin
+              </DialogTitle>
+              <DialogDescription>
+                Esta es una acción crítica de seguridad. El usuario tendrá acceso completo al sistema.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-4 py-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="font-medium">{selectedUser.full_name}</div>
+                  <div className="text-sm text-muted-foreground">{selectedUser.email}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-promote">
+                    Escribe <span className="font-bold">PROMOVER</span> para confirmar
+                  </Label>
+                  <Input
+                    id="confirm-promote"
+                    value={confirmationText}
+                    onChange={(e) => setConfirmationText(e.target.value)}
+                    placeholder="PROMOVER"
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowPromoteDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handlePromoteToSuperAdmin}
+                disabled={confirmationText !== 'PROMOVER'}
+              >
+                Confirmar Promoción
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Revoke Dialog */}
+        <Dialog open={showRevokeDialog} onOpenChange={setShowRevokeDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Revocar Privilegios de Super Admin
+              </DialogTitle>
+              <DialogDescription>
+                Esta acción eliminará todos los privilegios de Super Admin del usuario.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-4 py-4">
+                <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                  <div className="font-medium">{selectedUser.full_name}</div>
+                  <div className="text-sm text-muted-foreground">{selectedUser.email}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-revoke">
+                    Escribe <span className="font-bold">REVOCAR</span> para confirmar
+                  </Label>
+                  <Input
+                    id="confirm-revoke"
+                    value={confirmationText}
+                    onChange={(e) => setConfirmationText(e.target.value)}
+                    placeholder="REVOCAR"
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRevokeDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleRevokeSuperAdmin}
+                disabled={confirmationText !== 'REVOCAR'}
+              >
+                Confirmar Revocación
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showTenantDialog} onOpenChange={setShowTenantDialog}>
           <DialogContent>

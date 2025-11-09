@@ -2242,6 +2242,10 @@ export type Database = {
           total_processed: number
         }[]
       }
+      promote_to_super_admin: {
+        Args: { _promoted_by: string; _user_id: string }
+        Returns: undefined
+      }
       record_backup_metrics: { Args: never; Returns: undefined }
       reject_user: {
         Args: { _notes?: string; _rejected_by: string; _user_id: string }
@@ -2250,6 +2254,10 @@ export type Database = {
       reset_queue_for_tour: { Args: { p_tour_id: string }; Returns: number }
       revoke_cloud_storage_access: {
         Args: { p_destination_id: string }
+        Returns: undefined
+      }
+      revoke_super_admin: {
+        Args: { _revoked_by: string; _user_id: string }
         Returns: undefined
       }
       run_backup_system_tests: {
