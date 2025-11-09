@@ -14,7 +14,14 @@ const corsHeaders = {
 
 // Zod validation schema
 const NotificationSchema = z.object({
-  notification_type: z.enum(['new_view', 'new_user', 'weekly_report', 'activity_reminder'], {
+  notification_type: z.enum([
+    'new_view', 
+    'new_user', 
+    'weekly_report', 
+    'activity_reminder',
+    'super_admin_promoted',
+    'super_admin_revoked'
+  ], {
     errorMap: () => ({ message: 'Invalid notification type' })
   }),
   recipient_email: z.string().email({ message: 'Invalid email format' }).max(255),
@@ -26,7 +33,12 @@ const NotificationSchema = z.object({
     viewed_at: z.string().optional(),
     user_name: z.string().max(100).optional(),
     registered_at: z.string().optional(),
-    stats: z.any().optional()
+    stats: z.any().optional(),
+    promoted_by_name: z.string().max(100).optional(),
+    promoted_by_email: z.string().email().optional(),
+    revoked_by_name: z.string().max(100).optional(),
+    revoked_by_email: z.string().email().optional(),
+    timestamp: z.string().optional()
   })
 });
 
@@ -202,6 +214,152 @@ const getWeeklyReportEmailHtml = (data: any) => `
 </html>
 `;
 
+const getSuperAdminPromotedEmailHtml = (data: any) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0; }
+    .header h1 { color: white; margin: 0; font-size: 28px; }
+    .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
+    .promotion-box { background: #f5f3ff; padding: 25px; border-radius: 8px; border-left: 4px solid #8b5cf6; margin: 20px 0; }
+    .warning-box { background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0; }
+    .button { display: inline-block; background: #8b5cf6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }
+    .privileges { margin: 20px 0; }
+    .privilege { margin: 12px 0; padding: 12px; background: #f9fafb; border-radius: 6px; padding-left: 35px; position: relative; }
+    .privilege:before { content: "🔐"; position: absolute; left: 10px; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+    .timestamp { color: #6b7280; font-size: 13px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ ¡Has sido promovido a Super Admin!</h1>
+    </div>
+    <div class="content">
+      <div class="promotion-box">
+        <h2 style="margin-top: 0; color: #6366f1;">Hola ${data.recipient_name}!</h2>
+        <p style="font-size: 16px;">Has sido promovido a <strong>Super Administrador</strong> de la plataforma Virtual Tours.</p>
+        <p style="margin: 10px 0; color: #6b7280;">
+          <strong>Promovido por:</strong> ${data.promoted_by_name} (${data.promoted_by_email})
+        </p>
+      </div>
+      
+      <h3 style="color: #374151;">🔐 Tus Nuevos Privilegios</h3>
+      <div class="privileges">
+        <div class="privilege">Acceso completo a todos los tenants del sistema</div>
+        <div class="privilege">Aprobar o rechazar nuevos usuarios registrados</div>
+        <div class="privilege">Gestionar otros Super Admins (promoción y revocación)</div>
+        <div class="privilege">Crear y administrar tenants organizacionales</div>
+        <div class="privilege">Configurar features y permisos globales</div>
+        <div class="privilege">Acceso al Super Admin Dashboard completo</div>
+      </div>
+      
+      <div class="warning-box">
+        <h3 style="margin-top: 0; color: #d97706;">⚠️ Responsabilidades Importantes</h3>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li>Este rol tiene acceso completo al sistema</li>
+          <li>Todas tus acciones son registradas en el log de auditoría</li>
+          <li>Usa estos privilegios de forma responsable y ética</li>
+          <li>En caso de dudas, consulta con otro Super Admin</li>
+        </ul>
+      </div>
+      
+      <a href="${Deno.env.get('APP_URL')}/app/super-admin-dashboard" class="button">Acceder al Dashboard de Super Admin</a>
+      
+      <p class="timestamp">
+        Fecha de promoción: ${new Date(data.timestamp || Date.now()).toLocaleString('es-ES', { 
+          dateStyle: 'full', 
+          timeStyle: 'short' 
+        })}
+      </p>
+    </div>
+    <div class="footer">
+      <p>Virtual Tours Platform - Sistema de Seguridad</p>
+      <p style="color: #ef4444; font-weight: 600;">🔒 Email confidencial - No compartir</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+const getSuperAdminRevokedEmailHtml = (data: any) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0; }
+    .header h1 { color: white; margin: 0; font-size: 26px; }
+    .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
+    .revocation-box { background: #fef2f2; padding: 25px; border-radius: 8px; border-left: 4px solid #ef4444; margin: 20px 0; }
+    .info-box { background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 20px 0; }
+    .button { display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+    .timestamp { color: #6b7280; font-size: 13px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚠️ Privilegios de Super Admin Revocados</h1>
+    </div>
+    <div class="content">
+      <div class="revocation-box">
+        <h2 style="margin-top: 0; color: #dc2626;">Hola ${data.recipient_name}</h2>
+        <p style="font-size: 16px;">Tus privilegios de <strong>Super Administrador</strong> han sido revocados.</p>
+        <p style="margin: 10px 0; color: #6b7280;">
+          <strong>Acción ejecutada por:</strong> ${data.revoked_by_name} (${data.revoked_by_email})
+        </p>
+      </div>
+      
+      <h3 style="color: #374151;">📋 Qué significa esto</h3>
+      <p>A partir de este momento:</p>
+      <ul style="color: #6b7280;">
+        <li>Ya no tienes acceso al Super Admin Dashboard</li>
+        <li>No puedes aprobar nuevos usuarios del sistema</li>
+        <li>No puedes gestionar otros Super Admins</li>
+        <li>No tienes acceso a todos los tenants del sistema</li>
+      </ul>
+      
+      <div class="info-box">
+        <h3 style="margin-top: 0; color: #3b82f6;">✓ Tu acceso normal continúa</h3>
+        <p style="margin: 10px 0;">Sigues teniendo acceso a:</p>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li>Tu cuenta de usuario normal</li>
+          <li>Tus propios tenants y tours virtuales</li>
+          <li>Todas las funcionalidades de usuario estándar</li>
+        </ul>
+      </div>
+      
+      <p>Si crees que esto es un error o tienes preguntas, contacta con otro Super Admin del sistema.</p>
+      
+      <a href="${Deno.env.get('APP_URL')}/app/inicio" class="button">Ir a Mi Dashboard</a>
+      
+      <p class="timestamp">
+        Fecha de revocación: ${new Date(data.timestamp || Date.now()).toLocaleString('es-ES', { 
+          dateStyle: 'full', 
+          timeStyle: 'short' 
+        })}
+      </p>
+    </div>
+    <div class="footer">
+      <p>Virtual Tours Platform - Sistema de Seguridad</p>
+      <p style="font-size: 12px; color: #9ca3af;">Este es un email automático del sistema</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -287,6 +445,14 @@ const handler = async (req: Request): Promise<Response> => {
       case 'weekly_report':
         htmlContent = getWeeklyReportEmailHtml({ ...data, recipient_name });
         subject = '📊 Tu Reporte Semanal de Virtual Tours';
+        break;
+      case 'super_admin_promoted':
+        htmlContent = getSuperAdminPromotedEmailHtml({ ...data, recipient_name });
+        subject = '🛡️ Has sido promovido a Super Admin';
+        break;
+      case 'super_admin_revoked':
+        htmlContent = getSuperAdminRevokedEmailHtml({ ...data, recipient_name });
+        subject = '⚠️ Privilegios de Super Admin revocados';
         break;
       default:
         throw new Error(`Unknown notification type: ${notification_type}`);
