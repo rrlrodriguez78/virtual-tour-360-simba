@@ -242,7 +242,11 @@ const Viewer = () => {
             setPasswordProtected(true);
             setPasswordUpdatedAt(tourData.password_updated_at);
             setShowPasswordPrompt(true);
-            setTour({ title: tourData.title, description: tourData.description });
+          setTour({ 
+            title: tourData.title, 
+            description: tourData.description,
+            show_3d_navigation: tourData.show_3d_navigation
+          });
             setLoading(false);
             return;
           }
@@ -251,7 +255,11 @@ const Viewer = () => {
           setPasswordProtected(true);
           setPasswordUpdatedAt(tourData.password_updated_at);
           setShowPasswordPrompt(true);
-          setTour({ title: tourData.title, description: tourData.description });
+          setTour({ 
+            title: tourData.title, 
+            description: tourData.description,
+            show_3d_navigation: tourData.show_3d_navigation
+          });
           setLoading(false);
           return;
         }
@@ -260,7 +268,8 @@ const Viewer = () => {
       setTour({ 
         title: tourData.title, 
         description: tourData.description,
-        tour_type: (tourData.tour_type || 'tour_360') as 'tour_360' | 'photo_tour'
+        tour_type: (tourData.tour_type || 'tour_360') as 'tour_360' | 'photo_tour',
+        show_3d_navigation: tourData.show_3d_navigation
       });
       setTourType((tourData.tour_type || 'tour_360') as 'tour_360' | 'photo_tour');
 
