@@ -214,22 +214,52 @@ const Editor = () => {
     }
   };
 
-  const togglePublish = async () => {
+  const handlePublishOption = async (option: 'private' | 'public' | 'unpublish') => {
     if (!tour) return;
 
     try {
+      let updates: { is_published: boolean; is_publicly_listed: boolean } = { 
+        is_published: false, 
+        is_publicly_listed: false 
+      };
+      let successMessage = '';
+      
+      switch(option) {
+        case 'private':
+          updates = { 
+            is_published: true, 
+            is_publicly_listed: false 
+          };
+          successMessage = 'Tour publicado con link privado';
+          break;
+        case 'public':
+          updates = { 
+            is_published: true, 
+            is_publicly_listed: true 
+          };
+          successMessage = 'Tour publicado públicamente';
+          break;
+        case 'unpublish':
+          updates = { 
+            is_published: false, 
+            is_publicly_listed: false 
+          };
+          successMessage = 'Tour despublicado';
+          break;
+      }
+
       const { error } = await supabase
         .from('virtual_tours')
-        .update({ is_published: !tour.is_published })
+        .update(updates)
         .eq('id', tour.id);
 
       if (error) throw error;
-
-      setTour({ ...tour, is_published: !tour.is_published });
-      toast.success(tour.is_published ? 'Tour despublicado' : 'Tour publicado');
+      
+      setTour({ ...tour, ...updates });
+      toast.success(successMessage);
     } catch (error) {
-      console.error('Error toggling publish:', error);
-      toast.error('Error al cambiar estado');
+      console.error('Error updating publish status:', error);
+      toast.error('Error al cambiar estado de publicación');
     }
   };
 
@@ -654,20 +684,54 @@ const Editor = () => {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={togglePublish}>
-              {tour?.is_published ? (
-                <>
-                  <Lock className="w-4 h-4 mr-2" />
-                  {t('editor.unpublish')}
-                </>
-              ) : (
-                <>
-                  <Globe className="w-4 h-4 mr-2" />
-                  {t('editor.publish')}
-                </>
-              )}
-            </Button>
+          <div className="flex gap-2 items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant={tour.is_published ? "default" : "outline"}>
+                  {tour.is_published ? <Globe className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
+                  {tour.is_published ? t('editor.published') : t('editor.publish')}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handlePublishOption('private')}>
+                  <Lock className="mr-2 h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span>Publicar con link privado</span>
+                    <span className="text-xs text-muted-foreground">Solo mediante enlace compartido</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handlePublishOption('public')}>
+                  <Globe className="mr-2 h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span>Publicar públicamente</span>
+                    <span className="text-xs text-muted-foreground">Visible en Public Tours</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handlePublishOption('unpublish')}
+                  className="text-destructive"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Despublicar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {tour.is_published && (
+              <Badge variant={tour.is_publicly_listed ? "default" : "secondary"}>
+                {tour.is_publicly_listed ? (
+                  <>
+                    <Globe className="w-3 h-3 mr-1" />
+                    Público
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3 h-3 mr-1" />
+                    Link Privado
+                  </>
+                )}
+              </Badge>
+            )}
             {tour?.is_published && (
               <Button onClick={() => navigate(`/viewer/${id}`)}>
                 <Eye className="w-4 h-4 mr-2" />

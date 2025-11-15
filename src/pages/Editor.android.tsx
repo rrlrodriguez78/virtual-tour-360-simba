@@ -32,6 +32,9 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
   Drawer,
   DrawerContent,
   DrawerHeader,
@@ -201,22 +204,52 @@ const EditorAndroid = () => {
     }
   };
 
-  const togglePublish = async () => {
+  const handlePublishOption = async (option: 'private' | 'public' | 'unpublish') => {
     if (!tour) return;
 
     try {
+      let updates: { is_published: boolean; is_publicly_listed: boolean } = { 
+        is_published: false, 
+        is_publicly_listed: false 
+      };
+      let successMessage = '';
+      
+      switch(option) {
+        case 'private':
+          updates = { 
+            is_published: true, 
+            is_publicly_listed: false 
+          };
+          successMessage = 'Tour publicado con link privado';
+          break;
+        case 'public':
+          updates = { 
+            is_published: true, 
+            is_publicly_listed: true 
+          };
+          successMessage = 'Tour publicado públicamente';
+          break;
+        case 'unpublish':
+          updates = { 
+            is_published: false, 
+            is_publicly_listed: false 
+          };
+          successMessage = 'Tour despublicado';
+          break;
+      }
+
       const { error } = await supabase
         .from('virtual_tours')
-        .update({ is_published: !tour.is_published })
+        .update(updates)
         .eq('id', tour.id);
 
       if (error) throw error;
-
-      setTour({ ...tour, is_published: !tour.is_published });
-      toast.success(tour.is_published ? 'Tour despublicado' : 'Tour publicado');
+      
+      setTour({ ...tour, ...updates });
+      toast.success(successMessage);
     } catch (error) {
-      console.error('Error toggling publish:', error);
-      toast.error('Error al cambiar estado');
+      console.error('Error updating publish status:', error);
+      toast.error('Error al cambiar estado de publicación');
     }
   };
 
@@ -604,15 +637,67 @@ const EditorAndroid = () => {
             )}
           </div>
 
-          <div className="flex gap-1">
-            <Button 
-              variant={tour?.is_published ? "outline" : "default"}
-              size="sm"
-              onClick={togglePublish}
-              className="h-10 w-10 p-0"
-            >
-              {tour?.is_published ? <Lock className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
-            </Button>
+          <div className="flex gap-1 items-center">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant={tour?.is_published ? "default" : "outline"} size="sm" className="h-10">
+                  {tour?.is_published ? <Globe className="w-4 h-4 mr-1" /> : <Lock className="w-4 h-4 mr-1" />}
+                  {tour?.is_published ? 'Publicado' : 'Publicar'}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom">
+                <SheetHeader>
+                  <SheetTitle>Opciones de Publicación</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-3 py-4">
+                  <Button 
+                    variant="outline" 
+                    className="justify-start h-auto py-3"
+                    onClick={() => handlePublishOption('private')}
+                  >
+                    <Lock className="mr-2 h-4 w-4 shrink-0" />
+                    <div className="flex flex-col items-start text-left">
+                      <span className="font-medium">Publicar con link privado</span>
+                      <span className="text-xs text-muted-foreground font-normal">Solo mediante enlace compartido</span>
+                    </div>
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="justify-start h-auto py-3"
+                    onClick={() => handlePublishOption('public')}
+                  >
+                    <Globe className="mr-2 h-4 w-4 shrink-0" />
+                    <div className="flex flex-col items-start text-left">
+                      <span className="font-medium">Publicar públicamente</span>
+                      <span className="text-xs text-muted-foreground font-normal">Visible en Public Tours</span>
+                    </div>
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    className="justify-start"
+                    onClick={() => handlePublishOption('unpublish')}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Despublicar
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+            {tour?.is_published && (
+              <Badge variant={tour.is_publicly_listed ? "default" : "secondary"} className="text-xs">
+                {tour.is_publicly_listed ? (
+                  <>
+                    <Globe className="w-3 h-3 mr-0.5" />
+                    Público
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3 h-3 mr-0.5" />
+                    Link
+                  </>
+                )}
+              </Badge>
+            )}
             {tour?.is_published && (
               <Button 
                 size="sm"

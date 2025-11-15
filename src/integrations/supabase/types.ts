@@ -2009,6 +2009,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_publicly_listed: boolean | null
           is_published: boolean
           password_hash: string | null
           password_protected: boolean | null
@@ -2025,6 +2026,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_publicly_listed?: boolean | null
           is_published?: boolean
           password_hash?: string | null
           password_protected?: boolean | null
@@ -2041,6 +2043,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_publicly_listed?: boolean | null
           is_published?: boolean
           password_hash?: string | null
           password_protected?: boolean | null
