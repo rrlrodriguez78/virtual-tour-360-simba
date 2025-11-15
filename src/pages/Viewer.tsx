@@ -177,7 +177,8 @@ const Viewer = () => {
           tenant_id,
           password_protected,
           password_updated_at,
-          tour_type
+          tour_type,
+          show_3d_navigation
         `)
         .eq('id', id)
         .maybeSingle();
