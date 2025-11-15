@@ -261,6 +261,15 @@ export default function FloorPlanManager({
             .then(({ data: syncData, error: syncError }) => {
               if (syncError) {
                 console.warn('⚠️ Floor plan sync failed:', syncError);
+                const errorMsg = (syncData as any)?.error || syncError.message;
+                if (errorMsg?.includes('almacenamiento') || errorMsg?.includes('storage')) {
+                  alert('⚠️ Sincronización con Google Drive fallida:\n\n' + errorMsg);
+                }
+              } else if ((syncData as any)?.success === false) {
+                const errorMsg = (syncData as any)?.error;
+                if (errorMsg) {
+                  alert('⚠️ Sincronización con Google Drive fallida:\n\n' + errorMsg);
+                }
               } else {
                 console.log('✅ Floor plan synced to Drive:', syncData);
               }
@@ -310,6 +319,15 @@ export default function FloorPlanManager({
             .then(({ data: syncData, error: syncError }) => {
               if (syncError) {
                 console.warn('⚠️ Floor plan sync failed:', syncError);
+                const errorMsg = (syncData as any)?.error || syncError.message;
+                if (errorMsg?.includes('almacenamiento') || errorMsg?.includes('storage')) {
+                  alert('⚠️ Sincronización con Google Drive fallida:\n\n' + errorMsg);
+                }
+              } else if ((syncData as any)?.success === false) {
+                const errorMsg = (syncData as any)?.error;
+                if (errorMsg) {
+                  alert('⚠️ Sincronización con Google Drive fallida:\n\n' + errorMsg);
+                }
               } else {
                 console.log('✅ Floor plan synced to Drive:', syncData);
               }

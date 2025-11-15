@@ -629,20 +629,31 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('❌ Photo sync failed:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString()
     });
     
+    // Detectar errores específicos de cuota
+    const isQuotaError = errorMessage.includes('storage quota') || 
+                         errorMessage.includes('insufficientFilePermissions') ||
+                         errorMessage.includes('storageQuotaExceeded');
+    
+    const userFriendlyError = isQuotaError
+      ? 'Tu almacenamiento de Google Drive está lleno. Por favor libera espacio o aumenta tu capacidad de almacenamiento.'
+      : errorMessage;
+    
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: userFriendlyError,
+        errorType: isQuotaError ? 'QUOTA_EXCEEDED' : 'SYNC_ERROR',
         timestamp: new Date().toISOString()
       }),
       { 
-        status: 500, 
+        status: isQuotaError ? 507 : 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );

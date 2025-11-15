@@ -392,6 +392,15 @@ export default function PanoramaManager({ hotspotId, tourId }: PanoramaManagerPr
           .then(({ data, error }) => {
             if (error) {
               console.warn('⚠️ Photo sync to Drive failed:', error);
+              const errorMsg = (data as any)?.error || error.message;
+              if (errorMsg?.includes('almacenamiento') || errorMsg?.includes('storage')) {
+                toast.error(`Google Drive sync failed: ${errorMsg}`);
+              }
+            } else if ((data as any)?.success === false) {
+              const errorMsg = (data as any)?.error;
+              if (errorMsg) {
+                toast.error(`Google Drive sync failed: ${errorMsg}`);
+              }
             } else {
               console.log('✅ Photo synced to Drive:', data);
               toast.success('Photo synced to Google Drive!');
