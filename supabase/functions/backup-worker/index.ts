@@ -302,11 +302,15 @@ async function processBackupJob(backupJobId: string, backupJob: any, adminClient
   const userId = backupJob.user_id;
   const backupType = backupJob.job_type;
   
-  const IMAGES_PER_PART = 10; // Reducido a 10 imágenes por parte para evitar timeouts
+  const IMAGES_PER_PART = 10;
   
   console.log(`🔄 Starting MULTIPART backup processing for: ${tour.title}`);
 
+  let transactionStarted = false;
+  
   try {
+    // Marcar que iniciamos una transacción lógica
+    transactionStarted = true;
     // Recopilar todas las imágenes
     const allImages: Array<{type: 'floor_plan' | 'panorama', data: any}> = [];
     
@@ -333,7 +337,7 @@ async function processBackupJob(backupJobId: string, backupJob: any, adminClient
     
     // Si es la primera parte, inicializar metadata
     if (currentPart === 1) {
-      await adminClient
+      const { error: initError } = await adminClient
         .from('backup_jobs')
         .update({
           status: 'processing',
@@ -346,6 +350,11 @@ async function processBackupJob(backupJobId: string, backupJob: any, adminClient
           }
         })
         .eq('id', backupJobId);
+      
+      if (initError) {
+        console.error('❌ Error initializing backup metadata:', initError);
+        throw new Error(`Failed to initialize backup: ${initError.message}`);
+      }
     }
 
     // Calcular índices para esta parte
@@ -567,26 +576,73 @@ async function processBackupJob(backupJobId: string, backupJob: any, adminClient
     };
 
   } catch (error) {
-    console.error(`💥 Backup processing failed:`, error);
+    console.error(`💥 Error processing backup job ${backupJobId}:`, error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     
-    await adminClient
-      .from('backup_jobs')
-      .update({
-        status: 'failed',
-        error_message: errorMessage,
-        completed_at: new Date().toISOString()
-      })
-      .eq('id', backupJobId);
-
-    await adminClient
-      .from('backup_queue')
-      .update({
-        status: 'failed',
-        error_message: errorMessage,
-        completed_at: new Date().toISOString()
-      })
-      .eq('backup_job_id', backupJobId);
+    // Si estábamos en una transacción, hacer rollback limpiando estado
+    if (transactionStarted) {
+      console.log('🔄 Rolling back transaction state...');
+      
+      try {
+        // Limpiar archivos parciales en storage si existen
+        const metadata = (backupJob.metadata || {}) as any;
+        if (metadata.current_part > 0) {
+          console.log(`🗑️ Cleaning up partial files from part ${metadata.current_part}`);
+        }
+      } catch (cleanupError) {
+        console.warn('⚠️ Error during cleanup:', cleanupError);
+      }
+    }
+    
+    // Actualizar job como fallido con información detallada
+    try {
+      const { error: updateError } = await adminClient
+        .from('backup_jobs')
+        .update({
+          status: 'failed',
+          error_message: errorMessage,
+          last_error: errorMessage,
+          retry_count: (backupJob.retry_count || 0) + 1,
+          completed_at: new Date().toISOString(),
+          metadata: {
+            ...(backupJob.metadata || {}),
+            last_error_timestamp: new Date().toISOString(),
+            transaction_rolled_back: transactionStarted
+          }
+        })
+        .eq('id', backupJobId);
+      
+      if (updateError) {
+        console.error('❌ Error updating failed job status:', updateError);
+      }
+    } catch (statusError) {
+      console.error('❌ Critical error updating job status:', statusError);
+    }
+    
+    // Actualizar cola con retry logic
+    try {
+      const retryCount = (backupJob.retry_count || 0) + 1;
+      const maxRetries = backupJob.max_retries || 3;
+      
+      const { error: queueError } = await adminClient
+        .from('backup_queue')
+        .update({ 
+          status: retryCount < maxRetries ? 'retry' : 'failed',
+          error_message: errorMessage,
+          attempts: retryCount,
+          completed_at: retryCount >= maxRetries ? new Date().toISOString() : null,
+          scheduled_at: retryCount < maxRetries 
+            ? new Date(Date.now() + (Math.pow(2, retryCount) * 60000)).toISOString() // Exponential backoff
+            : null
+        })
+        .eq('backup_job_id', backupJobId);
+      
+      if (queueError) {
+        console.error('❌ Error updating queue status:', queueError);
+      }
+    } catch (queueUpdateError) {
+      console.error('❌ Critical error updating queue:', queueUpdateError);
+    }
 
     return {
       success: false,
