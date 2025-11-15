@@ -2228,6 +2228,16 @@ export type Database = {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      monitor_stuck_backup_jobs: {
+        Args: never
+        Returns: {
+          current_part: number
+          job_id: string
+          stuck_for_hours: number
+          total_parts: number
+          tour_id: string
+        }[]
+      }
       optimize_backup_system: { Args: never; Returns: string }
       process_backup_queue: {
         Args: never
