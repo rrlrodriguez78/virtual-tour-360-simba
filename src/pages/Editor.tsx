@@ -699,38 +699,6 @@ const Editor = () => {
           </div>
 
           <div className="flex gap-2 items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant={tour.is_published ? "default" : "outline"}>
-                  {tour.is_published ? <Globe className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
-                  {tour.is_published ? t('editor.published') : t('editor.publish')}
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handlePublishOption('private')}>
-                  <Lock className="mr-2 h-4 w-4" />
-                  <div className="flex flex-col">
-                    <span>Publicar con link privado</span>
-                    <span className="text-xs text-muted-foreground">Solo mediante enlace compartido</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handlePublishOption('public')}>
-                  <Globe className="mr-2 h-4 w-4" />
-                  <div className="flex flex-col">
-                    <span>Publicar públicamente</span>
-                    <span className="text-xs text-muted-foreground">Visible en Public Tours</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handlePublishOption('unpublish')}
-                  className="text-destructive"
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Despublicar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             {tour.is_published && (
               <Badge variant={tour.is_publicly_listed ? "default" : "secondary"}>
                 {tour.is_publicly_listed ? (
