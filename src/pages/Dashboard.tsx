@@ -7,7 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Eye, Edit, Trash2, Globe, Lock, Upload, Image as ImageIcon, Shield, Share2, ArrowLeft } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Globe, Lock, Upload, Image as ImageIcon, Shield, Share2, ArrowLeft, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ShareTourDialog from '@/components/share/ShareTourDialog';
 import TourSetupModal from '@/components/editor/TourSetupModal';
 import { TourTypeSelector } from '@/components/editor/TourTypeSelector';
@@ -26,6 +27,7 @@ interface Tour {
   title: string;
   description: string;
   is_published: boolean;
+  is_publicly_listed?: boolean;
   created_at: string;
   cover_image_url?: string;
   password_protected?: boolean;
@@ -72,7 +74,7 @@ const Dashboard = () => {
       // Load tours - EXCLUDE the "115N 3ST" tour (reserved for CreateTour page)
       const toursData: Tour[] = (await supabase
         .from('virtual_tours')
-        .select('*')
+        .select('*, is_publicly_listed')
         .eq('tenant_id', currentTenant.tenant_id)
         .neq('id', 'a5f2a965-d194-4f27-a01f-a0981f0ae307')
         .order('created_at', { ascending: false })).data as Tour[];
@@ -196,23 +198,52 @@ const Dashboard = () => {
     }
   };
 
-  const togglePublishStatus = async (tourId: string, currentStatus: boolean) => {
+  const handlePublishOption = async (
+    tourId: string, 
+    option: 'private' | 'link_private' | 'public'
+  ) => {
     try {
-      const newStatus = !currentStatus;
+      let updates = {};
+      let successMessage = '';
+      
+      switch(option) {
+        case 'private':
+          updates = { 
+            is_published: false, 
+            is_publicly_listed: false 
+          };
+          successMessage = 'Tour despublicado';
+          break;
+        case 'link_private':
+          updates = { 
+            is_published: true, 
+            is_publicly_listed: false 
+          };
+          successMessage = 'Tour publicado con link privado';
+          break;
+        case 'public':
+          updates = { 
+            is_published: true, 
+            is_publicly_listed: true 
+          };
+          successMessage = 'Tour publicado públicamente';
+          break;
+      }
+
       const { error } = await supabase
         .from('virtual_tours')
-        .update({ is_published: newStatus })
+        .update(updates)
         .eq('id', tourId);
 
       if (error) throw error;
-
+      
       setTours(tours.map(t => 
-        t.id === tourId ? { ...t, is_published: newStatus } : t
+        t.id === tourId ? { ...t, ...updates } : t
       ));
       
-      toast.success(newStatus ? t('dashboard.tourPublished') : t('dashboard.tourUnpublished'));
+      toast.success(successMessage);
     } catch (error) {
-      console.error('Error toggling publish status:', error);
+      console.error('Error updating publish status:', error);
       toast.error(t('dashboard.errorChangingStatus'));
     }
   };
@@ -343,25 +374,75 @@ const Dashboard = () => {
                     <div className="backdrop-blur-sm bg-black/40 px-2 py-1 rounded border border-white/20 flex-1 min-w-0">
                       <h3 className="text-white font-semibold text-xs truncate">{tour.title}</h3>
                     </div>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={() => togglePublishStatus(tour.id, tour.is_published)}
-                            className="backdrop-blur-sm bg-black/40 px-1.5 py-1 rounded border border-white/20 flex items-center justify-center shrink-0 hover:bg-black/60 transition-all cursor-pointer"
-                          >
-                            {tour.is_published ? (
-                              <Globe className="w-3.5 h-3.5 text-green-400" />
-                            ) : (
-                              <Lock className="w-3.5 h-3.5 text-gray-300" />
-                            )}
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{tour.is_published ? t('dashboard.published') : t('dashboard.notPublished')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <DropdownMenu>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                              <button className="backdrop-blur-sm bg-black/40 px-1.5 py-1 rounded border border-white/20 flex items-center justify-center shrink-0 hover:bg-black/60 transition-all cursor-pointer">
+                                {!tour.is_published ? (
+                                  <Lock className="w-3.5 h-3.5 text-gray-300" />
+                                ) : tour.is_publicly_listed ? (
+                                  <Globe className="w-3.5 h-3.5 text-green-400" />
+                                ) : (
+                                  <Globe className="w-3.5 h-3.5 text-yellow-400" />
+                                )}
+                                <ChevronDown className="w-2.5 h-2.5 ml-0.5 opacity-70" />
+                              </button>
+                            </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {!tour.is_published 
+                                ? 'Privado' 
+                                : tour.is_publicly_listed 
+                                  ? 'Público (visible en Public Tours)' 
+                                  : 'Link Privado (solo mediante enlace)'}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem 
+                          onClick={() => handlePublishOption(tour.id, 'private')}
+                          className={!tour.is_published ? 'bg-accent' : ''}
+                        >
+                          <Lock className="mr-2 h-4 w-4 text-gray-500" />
+                          <div className="flex flex-col">
+                            <span>Privado</span>
+                            <span className="text-xs text-muted-foreground">
+                              Solo tú puedes verlo
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuItem 
+                          onClick={() => handlePublishOption(tour.id, 'link_private')}
+                          className={tour.is_published && !tour.is_publicly_listed ? 'bg-accent' : ''}
+                        >
+                          <Globe className="mr-2 h-4 w-4 text-yellow-500" />
+                          <div className="flex flex-col">
+                            <span>Link Privado</span>
+                            <span className="text-xs text-muted-foreground">
+                              Solo quien tenga el enlace
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuItem 
+                          onClick={() => handlePublishOption(tour.id, 'public')}
+                          className={tour.is_published && tour.is_publicly_listed ? 'bg-accent' : ''}
+                        >
+                          <Globe className="mr-2 h-4 w-4 text-green-500" />
+                          <div className="flex flex-col">
+                            <span>Público</span>
+                            <span className="text-xs text-muted-foreground">
+                              Visible en Public Tours
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   
                   {/* Action Buttons - Bottom Left */}
