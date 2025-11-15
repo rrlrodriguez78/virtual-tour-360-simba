@@ -87,7 +87,7 @@ export const useAddPhotosToHotspot = () => {
           return null;
         }
 
-        // Sync to Google Drive (non-blocking)
+        // Sync to Google Drive (completely non-blocking, errors are silently logged)
         if (params.tenantId && newPhoto) {
           supabase.functions
             .invoke('photo-sync-to-drive', {
@@ -98,15 +98,19 @@ export const useAddPhotosToHotspot = () => {
               }
             })
             .then(({ data, error: syncError }) => {
-              // Silent error handling - don't block upload process
               if (syncError || (data as any)?.success === false) {
-                const errorMsg = (data as any)?.error || syncError?.message || 'Unknown error';
-                console.warn('⚠️ Photo sync to Drive failed (non-blocking):', errorMsg);
-              } else {
-                console.log('✅ Photo synced to Drive:', data);
+                // Silently log Drive sync issues without affecting upload
+                const errorType = (data as any)?.errorType;
+                if (errorType === 'QUOTA_EXCEEDED') {
+                  console.warn('⚠️ Google Drive quota exceeded - photos uploaded to platform only');
+                } else {
+                  console.warn('⚠️ Drive sync skipped:', (data as any)?.error || syncError?.message);
+                }
               }
             })
-            .catch(err => console.warn('⚠️ Drive sync failed (non-blocking):', err));
+            .catch(() => {
+              // Completely silence Drive sync errors to prevent UI disruption
+            });
         }
 
         return photoData.file.name;

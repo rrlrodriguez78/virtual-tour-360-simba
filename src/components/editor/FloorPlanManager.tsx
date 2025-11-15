@@ -267,9 +267,8 @@ export default function FloorPlanManager({
                 console.log('✅ Floor plan synced to Drive:', syncData);
               }
             })
-            .catch(err => {
-              // Silent error - don't block UI
-              console.warn('⚠️ Drive sync failed (non-blocking):', err);
+            .catch(() => {
+              // Completely silence any errors to prevent blank screens
             });
         }
         
@@ -319,9 +318,8 @@ export default function FloorPlanManager({
                 console.log('✅ Floor plan synced to Drive:', syncData);
               }
             })
-            .catch(err => {
-              // Silent error - don't block UI
-              console.warn('⚠️ Drive sync failed (non-blocking):', err);
+            .catch(() => {
+              // Completely silence any errors to prevent blank screens
             });
         }
         
