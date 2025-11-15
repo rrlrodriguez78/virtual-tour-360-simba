@@ -653,7 +653,7 @@ serve(async (req) => {
         timestamp: new Date().toISOString()
       }),
       { 
-        status: isQuotaError ? 507 : 500, 
+        status: isQuotaError ? 200 : 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
