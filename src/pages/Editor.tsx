@@ -136,7 +136,7 @@ const Editor = () => {
     try {
       const { data: tourData, error: tourError } = await supabase
         .from('virtual_tours')
-        .select('id, title, description, is_published, tenant_id, created_at, updated_at, password_protected, password_hash, password_updated_at, share_description, share_image_url, cover_image_url, tour_type')
+        .select('id, title, description, is_published, tenant_id, created_at, updated_at, password_protected, password_hash, password_updated_at, share_description, share_image_url, cover_image_url, tour_type, show_3d_navigation')
         .eq('id', id)
         .single();
 
