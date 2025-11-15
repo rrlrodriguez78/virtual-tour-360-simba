@@ -8,6 +8,7 @@ export interface Tour {
   created_at?: string;
   updated_at?: string;
   tour_type?: 'tour_360' | 'photo_tour';
+  show_3d_navigation?: boolean;
 }
 
 export interface FloorPlan {

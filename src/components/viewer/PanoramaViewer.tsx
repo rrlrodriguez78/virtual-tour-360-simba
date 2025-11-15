@@ -48,6 +48,7 @@ interface PanoramaViewerProps {
   onFloorChange?: (floorPlanId: string) => void;
   hotspotsByFloor?: Record<string, Hotspot[]>;
   tourType?: 'tour_360' | 'photo_tour';
+  show3DNavigation?: boolean;
 }
 
 export default function PanoramaViewer({ 
@@ -64,6 +65,7 @@ export default function PanoramaViewer({
   onFloorChange,
   hotspotsByFloor = {},
   tourType = 'tour_360',
+  show3DNavigation = true,
 }: PanoramaViewerProps) {
   const { t, i18n } = useTranslation();
   const { getEventCoordinates, preventDefault } = useUnifiedPointer();
@@ -748,7 +750,7 @@ export default function PanoramaViewer({
         >
           <div className={`relative w-full h-full transition-opacity duration-300 ${fadeTransition ? 'opacity-0' : 'opacity-100'}`}>
             <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
-            {sceneRef.current && cameraRef.current && tourType === 'tour_360' && (
+            {sceneRef.current && cameraRef.current && tourType === 'tour_360' && show3DNavigation && (
               <NavigationArrow3D
                 navigationPoints={navigationPoints}
                 scene={sceneRef.current}

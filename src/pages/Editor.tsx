@@ -26,7 +26,10 @@ import {
   Trash,
   X,
   MousePointer,
+  Navigation,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -737,6 +740,34 @@ const Editor = () => {
                 <Eye className="w-4 h-4 mr-2" />
                 {t('editor.viewTour')}
               </Button>
+            )}
+            {tour?.tour_type === 'tour_360' && (
+              <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-card">
+                <Navigation className="w-4 h-4 text-muted-foreground" />
+                <Label htmlFor="show-3d-nav" className="text-sm cursor-pointer">
+                  Flechas 3D
+                </Label>
+                <Switch
+                  id="show-3d-nav"
+                  checked={tour?.show_3d_navigation ?? true}
+                  onCheckedChange={async (checked) => {
+                    try {
+                      const { error } = await supabase
+                        .from('virtual_tours')
+                        .update({ show_3d_navigation: checked })
+                        .eq('id', tour.id);
+
+                      if (error) throw error;
+                      
+                      setTour({ ...tour, show_3d_navigation: checked });
+                      toast.success(checked ? 'Flechas 3D activadas' : 'Flechas 3D desactivadas');
+                    } catch (error) {
+                      console.error('Error updating 3D navigation:', error);
+                      toast.error('Error al actualizar configuración');
+                    }
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
