@@ -101,17 +101,23 @@ export const useAddPhotosToHotspot = () => {
             })
             .then(({ data, error: syncError }) => {
               if (syncError || (data as any)?.success === false) {
-                // Silently log Drive sync issues without affecting upload
-                const errorType = (data as any)?.errorType;
+                // Detect quota exceeded from either data or error response
+                const errorType = (data as any)?.errorType || 
+                                (syncError?.message?.includes('QUOTA_EXCEEDED')) ? 'QUOTA_EXCEEDED' : null;
+                
                 if (errorType === 'QUOTA_EXCEEDED' && !driveQuotaExceeded) {
                   driveQuotaExceeded = true;
                   console.warn('⚠️ Google Drive quota exceeded - photos uploaded to platform only');
-                } else {
+                } else if (syncError || (data as any)?.error) {
                   console.warn('⚠️ Drive sync skipped:', (data as any)?.error || syncError?.message);
                 }
               }
             })
-            .catch(() => {
+            .catch((err) => {
+              // Check for quota error in catch block too
+              if (err?.message?.includes('QUOTA_EXCEEDED') && !driveQuotaExceeded) {
+                driveQuotaExceeded = true;
+              }
               // Completely silence Drive sync errors to prevent UI disruption
             });
         }
