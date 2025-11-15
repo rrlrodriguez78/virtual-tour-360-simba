@@ -98,23 +98,15 @@ export const useAddPhotosToHotspot = () => {
               }
             })
             .then(({ data, error: syncError }) => {
-              if (syncError) {
-                console.warn('⚠️ Photo sync to Drive failed:', syncError);
-                const errorMsg = (data as any)?.error || syncError.message;
-                if (errorMsg?.includes('almacenamiento') || errorMsg?.includes('storage')) {
-                  console.error('🚨 QUOTA ERROR:', errorMsg);
-                }
-              } else if ((data as any)?.success === false) {
-                const errorMsg = (data as any)?.error;
-                console.warn('⚠️ Photo sync failed:', errorMsg);
-                if (errorMsg?.includes('almacenamiento') || errorMsg?.includes('storage')) {
-                  console.error('🚨 QUOTA ERROR:', errorMsg);
-                }
+              // Silent error handling - don't block upload process
+              if (syncError || (data as any)?.success === false) {
+                const errorMsg = (data as any)?.error || syncError?.message || 'Unknown error';
+                console.warn('⚠️ Photo sync to Drive failed (non-blocking):', errorMsg);
               } else {
                 console.log('✅ Photo synced to Drive:', data);
               }
             })
-            .catch(err => console.warn('⚠️ Photo sync error:', err));
+            .catch(err => console.warn('⚠️ Drive sync failed (non-blocking):', err));
         }
 
         return photoData.file.name;
