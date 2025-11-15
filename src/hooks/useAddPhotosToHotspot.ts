@@ -100,6 +100,16 @@ export const useAddPhotosToHotspot = () => {
             .then(({ data, error: syncError }) => {
               if (syncError) {
                 console.warn('⚠️ Photo sync to Drive failed:', syncError);
+                const errorMsg = (data as any)?.error || syncError.message;
+                if (errorMsg?.includes('almacenamiento') || errorMsg?.includes('storage')) {
+                  console.error('🚨 QUOTA ERROR:', errorMsg);
+                }
+              } else if ((data as any)?.success === false) {
+                const errorMsg = (data as any)?.error;
+                console.warn('⚠️ Photo sync failed:', errorMsg);
+                if (errorMsg?.includes('almacenamiento') || errorMsg?.includes('storage')) {
+                  console.error('🚨 QUOTA ERROR:', errorMsg);
+                }
               } else {
                 console.log('✅ Photo synced to Drive:', data);
               }
