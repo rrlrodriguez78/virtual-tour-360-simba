@@ -170,6 +170,17 @@ const Editor = () => {
           tour_type: (tourData.tour_type || 'tour_360') as 'tour_360' | 'photo_tour'
         });
 
+        // 🔴 DEBUG: Verificar show_3d_navigation al cargar
+        console.log('🔍 SHOW_3D_NAVIGATION DEBUG - LOAD:', {
+          'raw value from DB': tourData.show_3d_navigation,
+          'type': typeof tourData.show_3d_navigation,
+          'is undefined': tourData.show_3d_navigation === undefined,
+          'is null': tourData.show_3d_navigation === null,
+          'is false': tourData.show_3d_navigation === false,
+          'is true': tourData.show_3d_navigation === true,
+          'tour_id': tourData.id
+        });
+
         // 🔴 VERIFY: Tour saved in state with tenant_id
         console.log('✅ TOUR SAVED IN STATE:', {
           'state tour set': true,
@@ -749,7 +760,17 @@ const Editor = () => {
                 </Label>
                 <Switch
                   id="show-3d-nav"
-                  checked={tour?.show_3d_navigation ?? true}
+                  checked={(() => {
+                    const value = tour?.show_3d_navigation ?? true;
+                    console.log('🔍 SHOW_3D_NAVIGATION DEBUG - RENDER:', {
+                      'tour object': tour ? 'exists' : 'null',
+                      'show_3d_navigation value': tour?.show_3d_navigation,
+                      'type': typeof tour?.show_3d_navigation,
+                      'final checked value': value,
+                      'tour_id': tour?.id
+                    });
+                    return value;
+                  })()}
                   onCheckedChange={async (checked) => {
                     try {
                       const { error } = await supabase
