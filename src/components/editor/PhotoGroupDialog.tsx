@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -44,6 +45,9 @@ export const PhotoGroupDialog = ({
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const { addPhotos, isAdding } = useAddPhotosToHotspot();
+  const queryClient = useQueryClient();
+  
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   
   const getDateLocale = () => {
     switch (i18n.language) {
@@ -244,10 +248,26 @@ export const PhotoGroupDialog = ({
       return;
     }
 
+    const totalPhotos = validMatches.reduce((sum, match) => sum + match.photos.length, 0);
+    const totalHotspots = validMatches.length;
+    
+    // Obtener el nombre del floor plan
+    const floorPlanName = existingHotspots[0]?.floor_plan_id || 'plano';
+    
+    // Mostrar toast inicial con progreso
+    setUploadProgress({ current: 0, total: totalPhotos });
+    
+    const progressToast = toast({
+      title: "📤 Agregando fotos...",
+      description: `0/${totalPhotos} fotos completadas`,
+      duration: Infinity, // No auto-cerrar
+    });
+
     try {
-      // Parallelize uploads across all hotspots
-      const uploadPromises = validMatches.map(async (match) => {
-        // Get optimized photos for this match
+      let completedPhotos = 0;
+      
+      // Subir fotos a cada hotspot de forma secuencial para mejor feedback
+      for (const match of validMatches) {
         const photosWithOptimized = match.photos.map(p => {
           const group = photoGroups.find(g => g.name === p.groupName);
           const optimized = group?.optimizedPhotos?.find(opt => opt.file === p.file);
@@ -269,25 +289,62 @@ export const PhotoGroupDialog = ({
           tenantId
         });
         
-        return match.photos.length;
-      });
+        completedPhotos += match.photos.length;
+        setUploadProgress({ current: completedPhotos, total: totalPhotos });
+        
+        // Actualizar toast de progreso
+        progressToast.update({
+          id: progressToast.id,
+          title: "📤 Agregando fotos...",
+          description: `${completedPhotos}/${totalPhotos} fotos completadas`,
+          duration: Infinity,
+        });
+      }
       
-      const results = await Promise.all(uploadPromises);
-      const totalAdded = results.reduce((sum, count) => sum + count, 0);
+      // Cerrar toast de progreso
+      progressToast.dismiss();
       
+      // Mostrar toast de éxito con detalles
       toast({
-        title: t('photoImport.photosAddedSuccess'),
-        description: `${totalAdded} ${t('photoImport.photosAddedTo')} ${validMatches.length} ${t('photoImport.points')}`
+        title: "✅ Fotos agregadas exitosamente",
+        description: `${totalPhotos} fotos agregadas a ${totalHotspots} puntos en el plano "${floorPlanName}"`,
+        duration: 5000,
       });
       
+      // Invalidar queries para forzar actualización de datos
+      console.log('🔄 Invalidando queries para actualizar UI...');
+      await queryClient.invalidateQueries({ 
+        queryKey: ['panorama_photos', floorPlanId] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['hotspots', floorPlanId] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['floor_plans', tourId] 
+      });
+      
+      // Callback para refetch adicional
       onPhotosAdded();
-      onOpenChange(false);
+      
+      // Pequeño delay antes de cerrar para que se vea el toast de éxito
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 500);
+      
     } catch (error) {
+      console.error('Error agregando fotos:', error);
+      
+      // Cerrar toast de progreso
+      progressToast.dismiss();
+      
       toast({
         title: t('photoImport.errorAddingAllPhotos'),
         description: t('photoImport.couldNotAddAllPhotos'),
-        variant: "destructive"
+        variant: "destructive",
+        duration: 5000,
       });
+    } finally {
+      setUploadProgress({ current: 0, total: 0 });
     }
   };
 
