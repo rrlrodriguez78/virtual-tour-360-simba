@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface AddPhotosParams {
   hotspotId: string;
@@ -20,6 +21,7 @@ export const useAddPhotosToHotspot = () => {
 
   const addPhotos = async (params: AddPhotosParams) => {
     setIsAdding(true);
+    let driveQuotaExceeded = false;
     
     try {
       // 1. Obtener el display_order máximo actual
@@ -101,7 +103,8 @@ export const useAddPhotosToHotspot = () => {
               if (syncError || (data as any)?.success === false) {
                 // Silently log Drive sync issues without affecting upload
                 const errorType = (data as any)?.errorType;
-                if (errorType === 'QUOTA_EXCEEDED') {
+                if (errorType === 'QUOTA_EXCEEDED' && !driveQuotaExceeded) {
+                  driveQuotaExceeded = true;
                   console.warn('⚠️ Google Drive quota exceeded - photos uploaded to platform only');
                 } else {
                   console.warn('⚠️ Drive sync skipped:', (data as any)?.error || syncError?.message);
@@ -132,6 +135,14 @@ export const useAddPhotosToHotspot = () => {
           panorama_count: totalPhotos?.length || 0
         })
         .eq('id', params.hotspotId);
+      
+      // Show Drive quota warning if detected (only once per batch)
+      if (driveQuotaExceeded) {
+        toast.warning('Almacenamiento de Google Drive lleno', {
+          description: 'Las fotos se guardaron correctamente en la plataforma, pero no se pudieron sincronizar con Drive. Por favor libera espacio en tu Google Drive.',
+          duration: 8000,
+        });
+      }
       
       return { success: true, photosAdded: successCount };
     } catch (error) {
