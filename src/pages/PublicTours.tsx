@@ -21,6 +21,7 @@ interface Tour {
   cover_image_url: string | null;
   created_at: string;
   is_published: boolean;
+  is_publicly_listed: boolean;
   password_protected?: boolean;
 }
 
@@ -69,8 +70,9 @@ const PublicTours = () => {
       // Frontend filter ensures only published tours are shown
       const { data, error } = await supabase
         .from('virtual_tours')
-        .select('id, title, description, cover_image_url, created_at, is_published, password_protected')
-        .eq('is_published', true) // Frontend filter: only published tours
+        .select('id, title, description, cover_image_url, created_at, is_published, is_publicly_listed, password_protected')
+        .eq('is_published', true)
+        .eq('is_publicly_listed', true) // Only show publicly listed tours
         .order('created_at', { ascending: false });
 
       if (error) throw error;
