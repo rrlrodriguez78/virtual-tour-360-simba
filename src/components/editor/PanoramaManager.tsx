@@ -398,9 +398,8 @@ export default function PanoramaManager({ hotspotId, tourId }: PanoramaManagerPr
               console.log('✅ Photo synced to Drive:', data);
             }
           })
-          .catch(err => {
-            // Silent error - don't block UI
-            console.warn('⚠️ Drive sync failed (non-blocking):', err);
+          .catch(() => {
+            // Completely silence any errors to prevent blank screens
           });
       } else {
         console.warn('⚠️ Cannot sync to Drive: missing tourInfo or insertedPhoto');
