@@ -624,6 +624,7 @@ const Viewer = () => {
               }}
               hotspotsByFloor={hotspotsByFloor}
               tourType={tourType}
+              show3DNavigation={tour?.show_3d_navigation ?? true}
             />
           )}
 

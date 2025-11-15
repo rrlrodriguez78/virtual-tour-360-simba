@@ -2016,6 +2016,7 @@ export type Database = {
           password_updated_at: string | null
           share_description: string | null
           share_image_url: string | null
+          show_3d_navigation: boolean | null
           tenant_id: string
           title: string
           tour_type: string | null
@@ -2033,6 +2034,7 @@ export type Database = {
           password_updated_at?: string | null
           share_description?: string | null
           share_image_url?: string | null
+          show_3d_navigation?: boolean | null
           tenant_id: string
           title: string
           tour_type?: string | null
@@ -2050,6 +2052,7 @@ export type Database = {
           password_updated_at?: string | null
           share_description?: string | null
           share_image_url?: string | null
+          show_3d_navigation?: boolean | null
           tenant_id?: string
           title?: string
           tour_type?: string | null
