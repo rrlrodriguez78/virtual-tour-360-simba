@@ -910,11 +910,14 @@ export default function PanoramaViewer({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <DateSelector
-                  availableDates={availableDates}
-                  currentDate={currentCaptureDate}
-                  onDateSelect={handleDateSelect}
-                />
+                {/* DateSelector ocultado visualmente - código y funcionalidad intactos */}
+                <div className="hidden">
+                  <DateSelector
+                    availableDates={availableDates}
+                    currentDate={currentCaptureDate}
+                    onDateSelect={handleDateSelect}
+                  />
+                </div>
                 <Button variant="ghost" size="icon" onClick={() => setShowInfo(!showInfo)} className="text-white hover:bg-white/20 rounded-full h-9 w-9">
                   <Info className="w-4 h-4" />
                 </Button>
