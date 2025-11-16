@@ -561,7 +561,9 @@ export default function PanoramaViewer({
   const formatDate = (dateString: string) => {
     try {
       const locale = i18n.language === 'es' ? es : enUS;
-      return format(new Date(dateString), "d 'de' MMMM, yyyy", { locale });
+      // Agregar tiempo local para evitar desfase de zona horaria
+      const date = new Date(dateString + 'T00:00:00');
+      return format(date, "d 'de' MMMM, yyyy", { locale });
     } catch {
       return dateString;
     }
@@ -903,12 +905,7 @@ export default function PanoramaViewer({
                         })}
                       </span>
                     )}
-                    {activePhoto?.capture_date && (
-                      <>
-                        <span className="text-slate-500">•</span>
-                        <span>{formatDate(activePhoto.capture_date)}</span>
-                      </>
-                    )}
+                    {/* Fecha eliminada - solo se muestra en barra inferior */}
                   </div>
                 </div>
               </div>
