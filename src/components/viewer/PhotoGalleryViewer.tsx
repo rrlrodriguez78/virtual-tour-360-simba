@@ -61,7 +61,8 @@ export const PhotoGalleryViewer = ({
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // Agregar tiempo local para evitar desfase de zona horaria
+    const date = new Date(dateString + 'T00:00:00');
     const locale = i18n.language === 'es' ? es : enUS;
     return format(date, 'dd MMM yyyy', { locale });
   };
@@ -73,7 +74,11 @@ export const PhotoGalleryViewer = ({
 
   const availableDates = Array.from(
     new Set(filteredPhotos.map(p => p.capture_date).filter(Boolean))
-  ).sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime());
+  ).sort((a, b) => {
+    const dateA = new Date(a! + 'T00:00:00');
+    const dateB = new Date(b! + 'T00:00:00');
+    return dateB.getTime() - dateA.getTime();
+  });
 
   const photosByDate = selectedDate === 'all' 
     ? filteredPhotos 

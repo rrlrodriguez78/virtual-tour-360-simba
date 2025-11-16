@@ -26,7 +26,9 @@ export const DateSelector = ({
   const formatDate = (dateString: string) => {
     try {
       const locale = i18n.language === 'es' ? es : enUS;
-      return format(new Date(dateString), "d MMM yyyy", { locale });
+      // Agregar tiempo local para evitar desfase de zona horaria
+      const date = new Date(dateString + 'T00:00:00');
+      return format(date, "d MMM yyyy", { locale });
     } catch {
       return dateString;
     }
