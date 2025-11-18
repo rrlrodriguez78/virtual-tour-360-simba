@@ -1,17 +1,19 @@
 import { Button } from '@/components/ui/button';
-import { Maximize2, Info, Share2, ArrowLeft } from 'lucide-react';
+import { Maximize2, Info, Share2, ArrowLeft, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 interface ViewerHeaderProps {
   tourTitle: string;
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
   unlockOrientation?: () => void;
+  isOnline?: boolean;
 }
 
-export const ViewerHeader = ({ tourTitle, onToggleFullscreen, isFullscreen, unlockOrientation }: ViewerHeaderProps) => {
+export const ViewerHeader = ({ tourTitle, onToggleFullscreen, isFullscreen, unlockOrientation, isOnline = true }: ViewerHeaderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   
@@ -47,6 +49,12 @@ export const ViewerHeader = ({ tourTitle, onToggleFullscreen, isFullscreen, unlo
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <h1 className="text-base md:text-xl font-bold text-foreground truncate">{tourTitle}</h1>
+            {!isOnline && (
+              <Badge variant="secondary" className="gap-1 shrink-0">
+                <WifiOff className="w-3 h-3" />
+                <span className="hidden sm:inline">Offline</span>
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-1 md:gap-2 shrink-0">
             <Button variant="ghost" size="sm" onClick={handleHelp} className="min-w-[44px] min-h-[44px]">

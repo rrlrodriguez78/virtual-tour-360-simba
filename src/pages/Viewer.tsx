@@ -16,6 +16,8 @@ import { OrientationWarning } from '@/components/viewer/OrientationWarning';
 import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 import { Tour, FloorPlan, Hotspot, PanoramaPhoto } from '@/types/tour';
 import { TourPasswordPrompt } from '@/components/viewer/TourPasswordPrompt';
+import { offlineTourStorage } from '@/utils/offlineTourStorage';
+import { Wifi, WifiOff } from 'lucide-react';
 
 const Viewer = () => {
   const { id } = useParams();
@@ -37,6 +39,27 @@ const Viewer = () => {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordProtected, setPasswordProtected] = useState(false);
   const [passwordUpdatedAt, setPasswordUpdatedAt] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Detectar cambios en conectividad
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success(t('offline.backOnline'));
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.info(t('offline.workingOffline'));
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [t]);
 
   // Auto-dismiss warning cuando el usuario rota manualmente a landscape
   useEffect(() => {
@@ -167,7 +190,53 @@ const Viewer = () => {
         return;
       }
 
-      // 1. Cargar tour básico (accesible públicamente si está publicado)
+      // 🔌 Modo OFFLINE - Cargar desde IndexedDB
+      if (!navigator.onLine) {
+        console.log('📴 Cargando tour desde IndexedDB (offline)...');
+        const offlineTour = await offlineTourStorage.getTour(id);
+        
+        if (!offlineTour) {
+          toast.error(t('offline.tourNotDownloaded'));
+          setLoading(false);
+          return;
+        }
+
+        // Convertir Blobs a URLs
+        const floorPlansWithUrls = offlineTour.floorPlans.map(fp => ({
+          ...fp,
+          image_url: URL.createObjectURL(fp.image_blob)
+        }));
+
+        setTour({
+          title: offlineTour.title,
+          description: offlineTour.description,
+          tour_type: offlineTour.tour_type,
+          show_3d_navigation: true
+        });
+        setTourType(offlineTour.tour_type);
+        setFloorPlans(floorPlansWithUrls);
+        setCurrentFloorPlanId(floorPlansWithUrls[0]?.id);
+
+        // Agrupar hotspots por floor plan
+        const hotspotsMap: Record<string, Hotspot[]> = {};
+        offlineTour.floorPlans.forEach(fp => {
+          hotspotsMap[fp.id] = fp.hotspots.map(h => ({
+            id: h.id,
+            title: h.title,
+            description: h.description,
+            x_position: h.x_position,
+            y_position: h.y_position,
+            has_panorama: h.photos.length > 0,
+            panorama_count: h.photos.length,
+            first_photo_url: h.photos[0] ? URL.createObjectURL(h.photos[0].photo_blob) : undefined
+          }));
+        });
+        setHotspotsByFloor(hotspotsMap);
+        setLoading(false);
+        return;
+      }
+
+      // 🌐 Modo ONLINE - Cargar desde Supabase
       const { data: tourData, error: tourError } = await supabase
         .from('virtual_tours')
         .select(`
@@ -212,12 +281,10 @@ const Viewer = () => {
 
       // Si el tour está protegido con contraseña y el usuario NO es el dueño
       if (tourData.password_protected && !isOwner) {
-        // Verificar si hay un JWT válido en localStorage
         const storedToken = localStorage.getItem(`tour_access_${id}`);
         
         if (storedToken) {
           try {
-            // Validate JWT token server-side
             const { data: validationData, error: validationError } = await supabase.functions.invoke(
               'validate-tour-access',
               {
@@ -226,7 +293,6 @@ const Viewer = () => {
             );
 
             if (validationError || !validationData?.valid) {
-              // Token inválido, expirado, o contraseña cambiada
               localStorage.removeItem(`tour_access_${id}`);
               setPasswordProtected(true);
               setPasswordUpdatedAt(tourData.password_updated_at);
@@ -235,7 +301,6 @@ const Viewer = () => {
               setLoading(false);
               return;
             }
-            // Token válido, continuar con la carga
           } catch (error) {
             console.error('Error validating token:', error);
             localStorage.removeItem(`tour_access_${id}`);
@@ -251,7 +316,6 @@ const Viewer = () => {
             return;
           }
         } else {
-          console.log('🔒 Tour protegido con contraseña, solicitando acceso');
           setPasswordProtected(true);
           setPasswordUpdatedAt(tourData.password_updated_at);
           setShowPasswordPrompt(true);
@@ -283,7 +347,6 @@ const Viewer = () => {
         setFloorPlans(plansData);
         setCurrentFloorPlanId(plansData[0].id);
 
-        // Load ALL hotspots for the tour
         const floorPlanIds = plansData.map(plan => plan.id);
         const { data: allHotspotsData } = await supabase
           .from('hotspots')
@@ -293,7 +356,6 @@ const Viewer = () => {
           `)
           .in('floor_plan_id', floorPlanIds);
         
-        // Load first photo for each hotspot
         const hotspotIds = allHotspotsData?.map(h => h.id) || [];
         const { data: photosData } = hotspotIds.length > 0 ? await supabase
           .from('panorama_photos')
@@ -302,7 +364,6 @@ const Viewer = () => {
           .order('display_order', { ascending: true })
           : { data: [] };
         
-        // Create a map with only the first photo per hotspot
         const firstPhotosMap = new Map<string, string>();
         if (photosData) {
           photosData.forEach(photo => {
@@ -312,8 +373,6 @@ const Viewer = () => {
           });
         }
 
-
-        // Group hotspots by floor plan
         const hotspotsMap: Record<string, Hotspot[]> = {};
         if (allHotspotsData) {
           allHotspotsData.forEach(h => {
@@ -353,6 +412,28 @@ const Viewer = () => {
 
   const loadPanoramaPhotos = async (hotspotId: string) => {
     try {
+      // 🔌 Modo OFFLINE
+      if (!navigator.onLine && id) {
+        const offlineTour = await offlineTourStorage.getTour(id);
+        if (!offlineTour) return [];
+
+        for (const fp of offlineTour.floorPlans) {
+          const hotspot = fp.hotspots.find(h => h.id === hotspotId);
+          if (hotspot) {
+            return hotspot.photos.map(p => ({
+              id: p.id,
+              hotspot_id: hotspotId,
+              photo_url: URL.createObjectURL(p.photo_blob),
+              description: p.description,
+              display_order: p.display_order,
+              capture_date: p.capture_date
+            }));
+          }
+        }
+        return [];
+      }
+
+      // 🌐 Modo ONLINE
       const { data, error } = await supabase
         .from('panorama_photos')
         .select('id, hotspot_id, photo_url, description, display_order, capture_date')
@@ -509,6 +590,7 @@ const Viewer = () => {
         onToggleFullscreen={toggleFullscreen}
         isFullscreen={isFullscreen}
         unlockOrientation={unlockOrientation}
+        isOnline={isOnline}
       />
 
       {/* Solo renderizar el contenido del viewer si NO estamos mostrando password prompt */}

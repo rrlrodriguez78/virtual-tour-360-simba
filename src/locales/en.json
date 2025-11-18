@@ -203,6 +203,11 @@
     "enableAutoRotate": "Enable auto-rotation in your device settings",
     "rotateManually": "Please rotate your device manually to landscape"
   },
+  "offline": {
+    "backOnline": "Back online",
+    "workingOffline": "Working offline",
+    "tourNotDownloaded": "This tour is not downloaded for offline use"
+  },
   "auth": {
     "login": "Login",
     "signup": "Create Account",
