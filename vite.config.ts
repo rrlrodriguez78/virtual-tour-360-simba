@@ -132,6 +132,19 @@ export default defineConfig(({ mode }) => ({
             cacheName: 'supabase-functions-no-cache'
           }
         },
+        // ✅ Supabase REST API (NetworkFirst con fallback offline)
+        {
+          urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'supabase-data-cache',
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60 * 24 // 24 horas
+            },
+            networkTimeoutSeconds: 10
+          }
+        },
         // ✅ Google Fonts (CacheFirst para performance)
         {
           urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
