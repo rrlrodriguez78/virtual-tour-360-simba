@@ -23,7 +23,8 @@ import {
   CreditCard,
   Camera,
   Image as ImageIcon,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { useNativeCamera } from '@/hooks/useNativeCamera';
 import { AvatarEditor } from '@/components/settings/AvatarEditor';
@@ -41,6 +42,7 @@ import { AccountSettings } from '@/components/settings/AccountSettings';
 import { SettingsAccessAudit } from '@/components/settings/SettingsAccessAudit';
 import { useIsSuperAdmin } from '@/hooks/useIsSuperAdmin';
 import { useAvatarPreview } from '@/contexts/AvatarPreviewContext';
+import { SyncSettings } from '@/components/settings/SyncSettings';
 
 const UserSettings = () => {
   const navigate = useNavigate();
@@ -230,7 +232,7 @@ const UserSettings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-8 mb-8">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 mb-8">
             <TabsTrigger value="profile" className="gap-1">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -262,6 +264,10 @@ const UserSettings = () => {
             <TabsTrigger value="notifications" className="gap-1">
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Notifications</span>
+            </TabsTrigger>
+            <TabsTrigger value="sync" className="gap-1">
+              <RefreshCw className="w-4 h-4" />
+              <span className="hidden sm:inline">Sync</span>
             </TabsTrigger>
           </TabsList>
 
@@ -405,6 +411,10 @@ const UserSettings = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="sync">
+            <SyncSettings settings={settings} onUpdate={updateSettings} />
           </TabsContent>
         </Tabs>
       </div>
