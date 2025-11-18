@@ -203,6 +203,11 @@
     "enableAutoRotate": "Habilita la rotación automática en los ajustes de tu dispositivo",
     "rotateManually": "Por favor rota tu dispositivo manualmente a posición horizontal"
   },
+  "offline": {
+    "backOnline": "Conexión restaurada",
+    "workingOffline": "Trabajando sin conexión",
+    "tourNotDownloaded": "Este tour no está descargado para uso offline"
+  },
   "auth": {
     "login": "Iniciar Sesión",
     "signup": "Crear Cuenta",
