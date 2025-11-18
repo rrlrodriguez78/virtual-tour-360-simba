@@ -27,7 +27,9 @@ import {
   X,
   MousePointer,
   Navigation,
+  WifiOff,
 } from 'lucide-react';
+import { offlineTourStorage } from '@/utils/offlineTourStorage';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -95,6 +97,9 @@ const Editor = () => {
   // Grupo de Fotos por Plano
   const [photoGroupDialogOpen, setPhotoGroupDialogOpen] = useState(false);
   
+  // Offline detection
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
   // Hook for bulk creation
   const { createHotspot, isCreating } = useBulkHotspotCreation(
     selectedFloorPlan?.id || '', 
@@ -106,6 +111,25 @@ const Editor = () => {
       navigate('/login');
     }
   }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success(t('offline.backOnline'));
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.info(t('offline.workingOffline'));
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [t]);
 
   useEffect(() => {
     if (user && id) {
@@ -134,6 +158,40 @@ const Editor = () => {
 
   const loadTourData = async () => {
     try {
+      if (!isOnline) {
+        // Load from offline storage
+        const offlineTour = await offlineTourStorage.getTour(id!);
+        if (!offlineTour) {
+          toast.error(t('offline.tourNotDownloaded'));
+          setLoading(false);
+          return;
+        }
+
+        setTour({
+          id: offlineTour.id,
+          title: offlineTour.title,
+          description: offlineTour.description || '',
+          is_published: false,
+          tenant_id: offlineTour.tenant_id,
+          created_at: offlineTour.downloadedAt.toISOString(),
+          updated_at: offlineTour.lastModifiedAt.toISOString(),
+          tour_type: offlineTour.tour_type as 'tour_360' | 'photo_tour',
+          show_3d_navigation: false,
+        });
+
+        if (offlineTour.floorPlans && offlineTour.floorPlans.length > 0) {
+          const convertedFloorPlans = offlineTour.floorPlans.map(fp => ({
+            ...fp,
+            image_url: fp.image_blob ? URL.createObjectURL(fp.image_blob) : fp.image_url,
+          }));
+          setFloorPlans(convertedFloorPlans);
+          setSelectedFloorPlan(convertedFloorPlans[0]);
+        }
+
+        setLoading(false);
+        return;
+      }
+
       const { data: tourData, error: tourError } = await supabase
         .from('virtual_tours')
         .select('id, title, description, is_published, tenant_id, created_at, updated_at, password_protected, password_hash, password_updated_at, share_description, share_image_url, cover_image_url, tour_type, show_3d_navigation')
@@ -148,7 +206,6 @@ const Editor = () => {
       }
 
       if (tourData) {
-        // 🔴 CRITICAL DEBUG: Verify tenant_id is loaded
         console.log('🔴 TOUR LOADED IN EDITOR:', {
           'tour.id': tourData.id,
           'tour.tenant_id': tourData.tenant_id,
@@ -170,7 +227,6 @@ const Editor = () => {
           tour_type: (tourData.tour_type || 'tour_360') as 'tour_360' | 'photo_tour'
         });
 
-        // 🔴 DEBUG: Verificar show_3d_navigation al cargar
         console.log('🔍 SHOW_3D_NAVIGATION DEBUG - LOAD:', {
           'raw value from DB': tourData.show_3d_navigation,
           'type': typeof tourData.show_3d_navigation,
@@ -181,7 +237,6 @@ const Editor = () => {
           'tour_id': tourData.id
         });
 
-        // 🔴 VERIFY: Tour saved in state with tenant_id
         console.log('✅ TOUR SAVED IN STATE:', {
           'state tour set': true,
           'will have tenant_id': !!tourData.tenant_id
@@ -214,6 +269,17 @@ const Editor = () => {
 
   const loadHotspots = async (floorPlanId: string) => {
     try {
+      if (!isOnline && id) {
+        const offlineTour = await offlineTourStorage.getTour(id);
+        if (offlineTour) {
+          const floorPlan = offlineTour.floorPlans?.find(fp => fp.id === floorPlanId);
+          if (floorPlan?.hotspots) {
+            setHotspots(floorPlan.hotspots);
+          }
+        }
+        return;
+      }
+
       const { data } = await supabase
         .from('hotspots')
         .select('*')
@@ -690,6 +756,12 @@ const Editor = () => {
             </Button>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold">{tour?.title}</h1>
+              {!isOnline && (
+                <Badge variant="secondary" className="gap-1">
+                  <WifiOff className="h-3 w-3" />
+                  Offline
+                </Badge>
+              )}
               {tour?.tour_type && (
                 <Badge variant={tour.tour_type === 'tour_360' ? 'default' : 'secondary'}>
                   {tour.tour_type === 'tour_360' ? '🌐 Tour 360°' : '📸 Tour Fotos'}
